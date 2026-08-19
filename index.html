@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>단어 스마트 관리 v47</title>
+  <title>단어 스마트 관리 v48</title>
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
@@ -92,7 +92,6 @@
     .loading-spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--primary); animation: spin 1s linear infinite; margin: 20px auto; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    /* 🚀 학생 관리용 모달 CSS */
     .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.6); z-index: 2000; display: flex; justify-content: center; align-items: center; padding: 15px; }
     .modal-content { background: var(--bg-container); padding: 25px; border-radius: 16px; width: 100%; max-width: 400px; box-shadow: var(--shadow-lg); display:flex; flex-direction:column; gap:12px; overflow-y:auto; max-height:90vh;}
     .modal-content h3 { margin: 0 0 10px 0; font-size: 24px; font-weight: 800; text-align:center;}
@@ -101,12 +100,37 @@
     .modal-content .check-row { display:flex; align-items:center; gap:10px; margin-top:5px; cursor:pointer;}
     .modal-content input[type="checkbox"] { width: 20px; height: 20px; }
 
-    @media (min-width: 769px) { .controls-grid { display: grid; grid-template-columns: repeat(2, 1fr); } }
+    /* 🚀 v48 모바일 최적화 (글씨 크기 및 여백 대폭 축소) */
     @media (max-width: 768px) {
-      .header h2 { font-size: 24px; }
-      #studentList, .pending-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-      .student-card .name, .pending-card .pending-name { font-size: 42px; }
-      .tab { font-size: 13px; padding: 10px 4px; }
+      body { padding: 10px 5px; }
+      .container { padding: 20px 15px; border-radius: 15px; }
+      .header h2 { font-size: 22px; }
+      #studentList, .pending-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+      
+      .student-card { padding: 12px 8px; gap: 6px; }
+      .student-card .name, .pending-card .pending-name { font-size: 24px; letter-spacing: -1px; }
+      .card-meta-info { font-size: 13px; }
+      
+      .badge-wrapper { height: 22px; margin-bottom: 2px; }
+      .fail-count-badge, .prev-fail-badge { font-size: 11px; padding: 3px 6px; }
+      .status { font-size: 14px !important; margin-bottom: 6px !important; }
+      .btn-small { font-size: 12px; padding: 8px 0; }
+      .btn-group { gap: 2px; }
+      
+      .tab { font-size: 14px; padding: 10px 4px; min-width: 60px; }
+      .controls-grid label { font-size: 15px; }
+      .controls-grid input, .controls-grid select { font-size: 15px; padding: 12px 14px; }
+      .stats-table th, .stats-table td { padding: 10px 4px; font-size: 13px; }
+      .vacation-panel { padding: 14px 15px; }
+      .vacation-panel span:first-child { font-size: 16px !important; }
+      .vacation-panel span:last-child { font-size: 12px !important; }
+      .accordion-header { font-size: 16px; padding: 14px 15px; }
+    }
+    
+    @media (max-width: 400px) {
+      .student-card .name, .pending-card .pending-name { font-size: 22px; }
+      .btn-small { font-size: 11px; padding: 6px 0; }
+      .card-meta-info { font-size: 12px; }
     }
   </style>
 </head>
@@ -118,12 +142,11 @@
   </div>
   
   <div class="tabs">
-    <div class="tab active" onclick="switchTab('inputTab', this)">📝 결과입력</div>
+    <div class="tab active" onclick="switchTab('inputTab', this)">📝 입력</div>
     <div class="tab" onclick="refreshDashboard('dashTab', this)">📊 미통과</div>
     <div class="tab" onclick="refreshDashboard('overdueTab', this)">⚠️ 기한초과</div>
     <div class="tab" onclick="loadGlobalStats(this)">📈 통계</div>
-    <!-- 🚀 학생 관리 탭 추가 -->
-    <div class="tab" onclick="loadManageStudents(this)">⚙️ 명부관리</div>
+    <div class="tab" onclick="loadManageStudents(this)">⚙️ 명부</div>
   </div>
   
   <div id="inputTab" class="tab-content active">
@@ -156,11 +179,10 @@
     <div id="statsTableContainer" style="overflow-x:auto;"></div>
   </div>
 
-  <!-- 🚀 학생 관리 탭 내용 추가 -->
   <div id="manageTab" class="tab-content">
     <div style="margin-bottom:15px; display:flex; gap:10px;">
       <input type="text" id="manageSearch" placeholder="이름 검색..." onkeyup="filterManageTable()" style="flex:1; padding:14px; border-radius:10px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-main); font-size:16px;">
-      <button onclick="openStudentModal()" style="background:var(--primary); color:white; border:none; padding:0 20px; border-radius:10px; font-weight:700; font-size:16px; cursor:pointer;">+ 학생 추가</button>
+      <button onclick="openStudentModal()" style="background:var(--primary); color:white; border:none; padding:0 15px; border-radius:10px; font-weight:700; font-size:14px; cursor:pointer;">+ 학생추가</button>
     </div>
     <div id="manageTableContainer" style="overflow-x:auto;"></div>
   </div>
@@ -176,7 +198,6 @@
   </div>
 </div>
 
-<!-- 🚀 학생 추가/수정용 모달 팝업 -->
 <div id="studentModal" class="modal-overlay" style="display:none;">
   <div class="modal-content">
     <h3 id="modalTitle">학생 정보</h3>
@@ -210,7 +231,7 @@
 
 <script>
   // ============================================================================
-  // ⚠️ 중요: 반드시 기존에 쓰시던 URL과 ANON KEY로 아래 2줄을 채워주세요!
+  // 🚀 선생님의 Supabase 정보 적용 완료
   // ============================================================================
   const SUPABASE_URL = "https://gcnyotbytdvdhqopienw.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjbnlvdGJ5dGR2ZGhxb3BpZW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNzI3MDYsImV4cCI6MjEwMjY0ODcwNn0.87ZPqxDJoTOW5frYEBkY1NlMv7fpcEsd_xxK6V77-W4";
@@ -584,11 +605,7 @@
     renderStatsTable(filtered);
   }
 
-  // ============================================================================
-  // 🚀 [신규 기능] 학생 관리 로직
-  // ============================================================================
   let allManageStudents = [];
-  
   async function loadManageStudents(el) {
     switchTab('manageTab', el);
     document.getElementById('manageTableContainer').innerHTML = `<div class="loading-spinner"></div><p style="text-align:center;">명부를 불러오는 중...</p>`;
@@ -604,7 +621,7 @@
       return;
     }
     let html = `<table class="stats-table"><thead><tr>
-      <th>소속반</th><th>이름</th><th>평일반</th><th>평일요일</th><th>모의등급</th><th>조정</th><th>관리</th>
+      <th>소속반</th><th>이름</th><th>평일반</th><th>요일</th><th>등급</th><th>조정</th><th>관리</th>
       </tr></thead><tbody>`;
     data.forEach(s => {
       html += `<tr>
@@ -616,7 +633,7 @@
         <td style="font-weight:800; color:${s.is_adjusted ? 'var(--primary)' : 'inherit'};">${s.is_adjusted ? 'O' : 'X'}</td>
         <td>
           <button onclick="openStudentModal('${s.id}')" style="padding:6px 10px; background:var(--primary); color:white; border:none; border-radius:6px; font-weight:700; cursor:pointer;">수정</button>
-          <button onclick="deleteStudent('${s.id}')" style="padding:6px 10px; background:var(--danger); color:white; border:none; border-radius:6px; font-weight:700; cursor:pointer;">삭제</button>
+          <button onclick="deleteStudent('${s.id}')" style="padding:6px 10px; background:var(--danger); color:white; border:none; border-radius:6px; font-weight:700; cursor:pointer; margin-top:4px;">삭제</button>
         </td>
       </tr>`;
     });
@@ -688,8 +705,6 @@
     if (error) alert("삭제 실패");
     else { alert("삭제되었습니다."); loadManageStudents(document.querySelector('.tab.active')); }
   }
-
-  // ============================================================================
 
   async function copyText(date, dl, tabId, btn) {
     const originalText = btn.innerText; btn.innerText = "복사 중...";

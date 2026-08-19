@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>단어 스마트 관리 v52</title>
+  <title>단어 스마트 관리 v53</title>
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
@@ -18,7 +18,7 @@
       --input-bg: #F2F2F7;
       --pass-bg: #E8F5E9; --pass-border: #BBF7D0; --pass-text: #166534;
       --fail-bg: #FEF2F2; --fail-border: #FECACA; --fail-text: #991B1B;
-      --absent-bg: #F3F4F6; --absent-border: #D1D5DB; --absent-text: #4B5563;
+      --absent-bg: #E5E5EA; --absent-border: #D1D5DB; --absent-text: #4B5563;
       --danger: #FF3B30; --shadow-sm: 0 2px 6px rgba(0,0,0,0.04); --shadow-lg: 0 8px 24px rgba(0,0,0,0.06);
     }
     [data-theme="dark"] {
@@ -52,26 +52,35 @@
     .tab-content.active { display: block; animation: fadeIn 0.3s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     
-    .vacation-panel { display: flex; justify-content: space-between; align-items: center; background: var(--input-bg); padding: 18px 20px; border-radius: 16px; border: 1px solid var(--border-color); margin-bottom: 20px; }
-    .switch { position: relative; display: inline-block; width: 52px; height: 28px; flex-shrink: 0; }
+    /* 🚀 2줄 압축 레이아웃 및 사이즈 축소된 방학모드 토글 */
+    .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .input-row label { font-size: 13px; font-weight: 700; color: var(--text-sub); margin-bottom: 6px; display: block; margin-left: 4px; }
+    .input-row input, .input-row select { width: 100%; padding: 14px 16px; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 12px; font-size: 15px; appearance: none; -webkit-appearance: none; outline: none; transition: border 0.2s; box-sizing: border-box; height: 48px; }
+    .input-row input:focus, .input-row select:focus { border-color: var(--primary); }
+    
+    .compact-vacation-panel { display: flex; justify-content: space-between; align-items: center; background: var(--input-bg); padding: 0 14px; border-radius: 12px; border: 1px solid var(--border-color); height: 48px; box-sizing: border-box; }
+    .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--border-color); transition: .3s; border-radius: 30px; }
-    .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
     input:checked + .slider { background-color: var(--primary); }
-    input:checked + .slider:before { transform: translateX(24px); }
+    input:checked + .slider:before { transform: translateX(20px); }
     
-    .controls-grid { display: flex; flex-direction: column; gap: 16px; margin-bottom: 30px; width: 100%; }
-    .controls-grid label { font-size: 16px; font-weight: 700; color: var(--text-sub); margin-bottom: 6px; display: block; } 
-    .controls-grid input, .controls-grid select { width: 100%; padding: 16px 18px; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 14px; font-size: 16px; appearance: none; -webkit-appearance: none; outline: none; transition: border 0.2s;} 
-    .controls-grid input:focus, .controls-grid select:focus { border-color: var(--primary); }
+    /* 🚀 명부 부분 배경 분리 (연회색 영역) */
+    .list-area-wrapper { background: var(--bg-body); padding: 20px; border-radius: 20px; border: 1px solid var(--border-color); margin-top: 10px; }
     
-    #studentList { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 20px; width: 100%; }
+    /* 🚀 통계 현황판 스타일 */
+    .summary-stats { display: flex; justify-content: space-around; background: var(--primary); color: white; padding: 12px 6px; border-radius: 14px; margin-bottom: 16px; box-shadow: var(--shadow-sm); }
+    .summary-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+    .summary-label { font-size: 11px; opacity: 0.9; font-weight: 600; }
+    .summary-value { font-size: 18px; font-weight: 900; line-height: 1; }
+
+    #studentList { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; width: 100%; }
     .student-card { background: var(--bg-container); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px 12px; text-align: center; transition: 0.2s; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; box-shadow: var(--shadow-sm); }
     .student-card.pass { background: var(--pass-bg); border-color: var(--pass-border); }
     .student-card.fail { background: var(--fail-bg); border-color: var(--fail-border); }
     .student-card.absent { background: var(--absent-bg); border-color: var(--absent-border); opacity: 0.8; }
     
-    /* 🚀 뱃지 겹침 해결: height를 auto로 변경하여 내용만큼 동적으로 늘어나게 설정 */
     .badge-wrapper { min-height: 24px; height: auto; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: center; width: 100%; margin-bottom: 4px; padding-bottom: 2px; }
     .fail-count-badge { font-size: 12px; font-weight: 800; background: var(--danger); color: white; padding: 4px 8px; border-radius: 8px; white-space: nowrap; }
     .prev-fail-badge { font-size: 12px; font-weight: 800; background: #FF9500; color: white; padding: 4px 8px; border-radius: 8px; white-space: nowrap; }
@@ -84,7 +93,7 @@
     .btn-small { flex: 1; padding: 10px 0; border-radius: 8px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; background: transparent; color: var(--text-sub); transition: 0.2s; }
     .btn-small.active-fail { background: var(--fail-text); color: #ffffff; }
     .btn-small.active-absent { background: var(--absent-text); color: #ffffff; }
-    .btn-save { width: 100%; max-width: 600px; margin: 30px auto; display: block; padding: 20px; background: var(--primary); color: white; border: none; border-radius: 16px; font-size: 20px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3); }
+    .btn-save { width: 100%; max-width: 600px; margin: 30px auto 10px auto; display: block; padding: 20px; background: var(--primary); color: white; border: none; border-radius: 16px; font-size: 20px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3); }
     
     .stats-table { width: 100%; border-collapse: collapse; background: var(--bg-container); border-radius: 16px; overflow: hidden; margin-top: 10px; font-size: 15px; border: 1px solid var(--border-color);}
     .stats-table th { background: var(--input-bg); padding: 14px 8px; text-align: center; font-weight: 700; color: var(--text-sub); white-space: nowrap;}
@@ -118,13 +127,23 @@
     .modal-content input[type="text"]:focus { border-color: var(--primary); }
     .modal-content .check-row { display:flex; align-items:center; gap:10px; margin-top:5px; cursor:pointer;}
     
-    /* 📱 v52 모바일 화면 최적화 (이름과 뱃지 겹침 현상 원천 차단) */
+    /* 📱 모바일 최적화 (2열 입력, 3열 명단) */
     @media (max-width: 768px) {
       body { padding: 10px 5px 85px 5px; background-color: var(--bg-body); }
       .container { padding: 15px 10px; border-radius: 16px; box-shadow: none; background: transparent; }
       .header h2 { font-size: 22px; }
       
-      /* 모바일 3명씩(3열) 배치 */
+      .input-row { gap: 8px; margin-bottom: 10px; }
+      .input-row label { font-size: 12px; margin-bottom: 4px; }
+      .input-row input, .input-row select { padding: 12px 12px; font-size: 14px; height: 45px; border-radius: 10px;}
+      .compact-vacation-panel { height: 45px; padding: 0 12px; border-radius: 10px;}
+      .compact-vacation-panel span { font-size: 13px !important; }
+      
+      .list-area-wrapper { padding: 14px 10px; border-radius: 16px; }
+      .summary-stats { padding: 10px 4px; border-radius: 12px; margin-bottom: 14px; }
+      .summary-value { font-size: 16px; }
+      .summary-label { font-size: 10px; }
+
       #studentList, .pending-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
       
       .student-card { padding: 12px 6px; gap: 4px; border-radius: 14px; background: var(--bg-container); }
@@ -133,7 +152,6 @@
       .student-card .name, .pending-card .pending-name { font-size: 20px; letter-spacing: -0.5px; margin: 2px 0; }
       .card-meta-info { font-size: 11px; text-align: center; display: flex; flex-direction: column; gap: 2px;}
       
-      /* 🚀 동적 높이 조절: 뱃지가 줄바꿈되면 아래로 안전하게 늘어나도록 설정 */
       .badge-wrapper { min-height: 22px; height: auto; gap: 3px; margin-bottom: 4px; }
       .fail-count-badge, .prev-fail-badge { font-size: 10px; padding: 3px 5px; border-radius: 6px; white-space: nowrap; line-height: 1.2; }
       
@@ -143,17 +161,10 @@
       .btn-small { font-size: 11px; padding: 8px 0; border-radius: 8px; background: var(--input-bg); }
       
       .tab { font-size: 13px; padding: 12px 0; }
-      .controls-grid { gap: 10px; margin-bottom: 20px; }
-      .controls-grid label { font-size: 14px; margin-bottom: 4px; }
-      .controls-grid input, .controls-grid select { font-size: 15px; padding: 12px 14px; border-radius: 12px; }
-      
       .stats-table th, .stats-table td { padding: 10px 4px; font-size: 12px; }
-      .vacation-panel { padding: 14px 16px; border-radius: 14px; }
-      .vacation-panel span:first-child { font-size: 16px !important; }
-      .vacation-panel span:last-child { font-size: 11px !important; }
       .accordion-header { font-size: 15px; padding: 14px 16px; border-radius: 14px; }
       .batch-footer { bottom: 75px; padding: 12px; width: calc(100% - 20px); border-radius: 16px; }
-      .btn-save { padding: 16px; font-size: 18px; border-radius: 14px; }
+      .btn-save { padding: 16px; font-size: 18px; border-radius: 14px; margin-top: 10px;}
     }
     
     @media (max-width: 380px) {
@@ -171,20 +182,35 @@
   </div>
   
   <div id="inputTab" class="tab-content active">
-    <div class="vacation-panel">
-      <div style="display:flex; flex-direction:column; gap:4px;">
-        <span style="font-size: 16px; font-weight: 800; color: var(--text-main);">🏖️ 방학 기간 모드</span>
-        <span style="font-size: 12px; font-weight: 600; color: var(--text-sub);">월~토 요일 무관 반별 시험</span>
+    <!-- 🚀 2줄 압축 입력 패널 (상단 흰색 영역) -->
+    <div class="top-controls-wrapper">
+      <div class="input-row">
+        <div><label>시험 일자</label><input type="date" id="testDate" onchange="updateClassDropdown()"></div>
+        <div><label>시험 반</label><select id="groupSelect" onchange="loadStudents()"></select></div>
       </div>
-      <label class="switch"><input type="checkbox" id="vacationToggle" onchange="toggleVacationMode()"><span class="slider"></span></label>
+      <div class="input-row">
+        <div><label>일괄 마감 기한</label><input type="date" id="deadlineDate"></div>
+        <div>
+          <label>운영 모드</label>
+          <div class="compact-vacation-panel">
+            <span style="font-size: 14px; font-weight: 800; color: var(--text-main);">🏖️ 방학 모드</span>
+            <label class="switch">
+              <input type="checkbox" id="vacationToggle" onchange="toggleVacationMode()">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="controls-grid">
-      <div><label>시험 일자</label><input type="date" id="testDate" onchange="updateClassDropdown()"></div>
-      <div><label>시험 반</label><select id="groupSelect" onchange="loadStudents()"></select></div>
-      <div style="grid-column: 1/-1;"><label>일괄 마감 기한</label><input type="date" id="deadlineDate"></div>
+
+    <!-- 🚀 명단 및 현황판 영역 (하단 회색 배경 영역) -->
+    <div class="list-area-wrapper">
+      <div id="summaryStatsContainer"></div>
+      <div id="studentList">
+        <p style="grid-column: 1/-1; text-align:center; color: var(--text-sub); font-size:15px; padding: 40px 0;">상단에서 날짜와 반을 선택해주세요.</p>
+      </div>
+      <button class="btn-save" id="saveBtn" style="display:none;" onclick="saveAll()">결과 일괄 저장</button>
     </div>
-    <div id="studentList"><p style="grid-column: 1/-1; text-align:center; color: var(--text-sub); font-size:16px; padding: 50px 0;">상단에서 날짜와 반을 선택해주세요.</p></div>
-    <button class="btn-save" id="saveBtn" style="display:none;" onclick="saveAll()">결과 일괄 저장</button>
   </div>
   
   <div id="dashTab" class="tab-content"><div id="pendingListContainer"></div></div>
@@ -259,7 +285,7 @@
 </div>
 
 <script>
-  // 🚀 선생님의 Supabase 정보 적용 완료
+  // 🚀 선생님의 Supabase 정보
   const SUPABASE_URL = "https://gcnyotbytdvdhqopienw.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjbnlvdGJ5dGR2ZGhxb3BpZW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNzI3MDYsImV4cCI6MjEwMjY0ODcwNn0.87ZPqxDJoTOW5frYEBkY1NlMv7fpcEsd_xxK6V77-W4";
 
@@ -313,7 +339,8 @@
       html += '<option value="1-5">1-5반</option><option value="1-6">1-6반</option><option value="1-7">1-7반</option>';
     }
     sel.innerHTML = html;
-    document.getElementById('studentList').innerHTML = `<p style="grid-column: 1/-1; text-align:center; color: var(--text-sub); font-size:16px; padding: 50px 0;">상단에서 날짜와 반을 선택해주세요.</p>`;
+    document.getElementById('studentList').innerHTML = `<p style="grid-column: 1/-1; text-align:center; color: var(--text-sub); font-size:15px; padding: 40px 0;">상단에서 날짜와 반을 선택해주세요.</p>`;
+    document.getElementById('summaryStatsContainer').innerHTML = '';
     document.getElementById('saveBtn').style.display = 'none';
   }
 
@@ -346,12 +373,46 @@
     return isAdj ? 20 : 36;
   }
 
+  // 🚀 통계 현황판 실시간 갱신 함수
+  function updateSummaryStats() {
+    const cards = document.querySelectorAll('.student-card');
+    if (cards.length === 0) return;
+    
+    let total = cards.length;
+    let absent = 0;
+    let retest = 0;
+    let penalty = 0;
+
+    cards.forEach(c => {
+      let status = c.getAttribute('data-status');
+      let action = c.getAttribute('data-action');
+      if (status === 'Absence') {
+        absent++;
+      } else if (status === 'Fail') {
+        if (action === '재시') retest++;
+        if (action === '빡지') penalty++;
+      }
+    });
+    
+    let present = total - absent;
+
+    const eTotal = document.getElementById('statTotal');
+    if(eTotal) {
+      eTotal.innerText = total;
+      document.getElementById('statPresent').innerText = present;
+      document.getElementById('statAbsent').innerText = absent;
+      document.getElementById('statRetest').innerText = retest;
+      document.getElementById('statPenalty').innerText = penalty;
+    }
+  }
+
   async function loadStudents() {
     const g = document.getElementById('groupSelect').value; 
     const targetDateStr = document.getElementById('testDate').value; 
     if(!g || !targetDateStr) return;
     
     document.getElementById('studentList').innerHTML = `<div style="grid-column: 1/-1;"><div class="loading-spinner"></div><p style="text-align:center; color:var(--text-sub);">불러오는 중...</p></div>`;
+    document.getElementById('summaryStatsContainer').innerHTML = '';
 
     try {
       const [{data: allStudents}, {data: allRecords}] = await Promise.all([
@@ -436,7 +497,26 @@
 
   function renderGrid(res) {
     const list = document.getElementById('studentList');
-    if (res.length === 0) { list.innerHTML = `<p style='grid-column:1/-1; text-align:center; padding:40px 0;'>학생 명단이 없습니다.</p>`; return; }
+    const sumContainer = document.getElementById('summaryStatsContainer');
+    
+    if (res.length === 0) { 
+      sumContainer.innerHTML = '';
+      list.innerHTML = `<p style='grid-column:1/-1; text-align:center; padding:40px 0;'>학생 명단이 없습니다.</p>`; 
+      document.getElementById('saveBtn').style.display = 'none';
+      return; 
+    }
+
+    // 🚀 통계 현황판 HTML 렌더링
+    sumContainer.innerHTML = `
+      <div class="summary-stats">
+        <div class="summary-item"><span class="summary-label">총원</span><span class="summary-value" id="statTotal">0</span></div>
+        <div class="summary-item"><span class="summary-label">출석</span><span class="summary-value" id="statPresent">0</span></div>
+        <div class="summary-item"><span class="summary-label">결석</span><span class="summary-value" id="statAbsent">0</span></div>
+        <div class="summary-item"><span class="summary-label">재시</span><span class="summary-value" id="statRetest">0</span></div>
+        <div class="summary-item"><span class="summary-label">빡지</span><span class="summary-value" id="statPenalty">0</span></div>
+      </div>
+    `;
+
     list.innerHTML = res.map(s => {
       let cardClass = s.isPassed === 'Fail' ? 'fail' : (s.isPassed === 'Absence' ? 'absent' : 'pass');
       const actionStr = s.action || '재시';
@@ -445,7 +525,7 @@
 
       const failBadge = s.totalFails > 0 ? `<span class="fail-count-badge">누적 ${s.totalFails}</span>` : '';
       const prevFailBadge = s.failedLastTime ? `<span class="prev-fail-badge">⚠️이전 미통과</span>` : '';
-      const badges = (failBadge || prevFailBadge) ? `<div class="badge-wrapper">${failBadge}${prevFailBadge}</div>` : `<div class="badge-wrapper"></div>`;
+      const badges = (failBadge || prevFailBadge) ? `<div class="badge-wrapper">${failBadge}${prevFailBadge}</div>` : `<div class="badge-wrapper" style="min-height:0; margin-bottom:0;"></div>`;
       
       return `
       <div class="student-card ${cardClass}" id="card-${s.name}" data-name="${s.name}" data-group="${s.group}" data-status="${s.isPassed}" data-action="${baseAction}" data-extra="${hasExtra}">
@@ -469,6 +549,8 @@
       </div>`;
     }).join('');
     document.getElementById('saveBtn').style.display = 'block';
+
+    updateSummaryStats(); // 현황판 최초 계산
   }
 
   function setBaseAction(n, a) { const c = document.getElementById('card-'+n); c.className = 'student-card fail'; c.setAttribute('data-status', 'Fail'); c.setAttribute('data-action', a); renderCardButtons(c); }
@@ -486,6 +568,8 @@
     btns[2].className = (status === 'Fail' && hasExtra) ? 'btn-small active-fail' : 'btn-small';
     btns[3].className = (status === 'Absence') ? 'btn-small active-absent' : 'btn-small';
     card.querySelector('.status').innerText = status === 'Pass' ? 'Pass' : (status === 'Absence' ? '결석' : baseAction + (hasExtra ? ' (+빡지추가)' : ''));
+    
+    updateSummaryStats(); // 🚀 버튼을 누를 때마다 현황판 실시간 갱신
   }
 
   async function saveAll() {

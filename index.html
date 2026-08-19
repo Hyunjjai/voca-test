@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>단어 스마트 관리 v48</title>
+  <title>단어 스마트 관리 v49</title>
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <style>
     *, *::before, *::after { box-sizing: border-box !important; }
-    html, body { overflow-x: hidden; width: 100%; margin: 0; padding: 0; }
+    html, body { overflow-x: hidden; width: 100%; margin: 0; padding: 0; background-color: var(--bg-body);}
     :root {
       --bg-body: #F4F5F8; --bg-container: #FFFFFF; --text-main: #1F2937; --text-sub: #6B7280;
       --border-color: #E5E7EB; --primary: #4F46E5; --primary-hover: #4338CA; --tab-bg: #F3F4F6;
@@ -27,17 +27,31 @@
       --fail-bg: #3E161C; --fail-border: #5E2028; --fail-text: #FCA5A5;
       --absent-bg: #2C2C2E; --absent-border: #3A3A3C; --absent-text: #A1A1AA;
     }
-    body { font-family: 'Pretendard', sans-serif; background-color: var(--bg-body); color: var(--text-main); padding: 15px 10px; transition: 0.3s; }
+    body { font-family: 'Pretendard', sans-serif; color: var(--text-main); padding: 15px 10px 90px 10px; transition: 0.3s; }
+    
     .container { width: 100%; max-width: 1200px; margin: 0 auto; background: var(--bg-container); padding: 30px 25px; border-radius: 20px; box-shadow: var(--shadow-lg); transition: 0.3s; }
     .header h2 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -0.5px; }
     .theme-toggle { background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-sub); border-radius: 50%; width: 50px; height: 50px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
     .theme-toggle svg { width: 24px; height: 24px; }
     
-    .tabs { display: flex; background: var(--tab-bg); border-radius: 12px; padding: 5px; margin-bottom: 30px; width: 100%; flex-wrap: wrap; gap: 4px;}
-    .tab { flex: 1; min-width: 100px; text-align: center; padding: 12px; cursor: pointer; font-weight: 600; color: var(--text-sub); border-radius: 10px; font-size: 15px; transition: 0.2s; } 
-    .tab.active { background: var(--tab-active); color: var(--text-main); box-shadow: var(--shadow-sm); }
+    /* 🚀 v49: 하단 네비게이션 탭바로 전면 수정 */
+    .tabs { 
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); 
+      width: 100%; max-width: 1200px; background: var(--bg-container); 
+      display: flex; justify-content: space-around; align-items: center;
+      padding: 10px 5px calc(10px + env(safe-area-inset-bottom)) 5px; 
+      margin: 0; z-index: 1000; border-top: 1px solid var(--border-color);
+      border-radius: 20px 20px 0 0; box-shadow: 0 -4px 15px rgba(0,0,0,0.05); gap: 4px;
+    }
+    .tab { 
+      flex: 1; text-align: center; padding: 14px 0; cursor: pointer; 
+      font-weight: 600; color: var(--text-sub); font-size: 15px; border-radius: 14px; 
+      transition: 0.2s; -webkit-tap-highlight-color: transparent;
+    } 
+    .tab.active { color: var(--primary); font-weight: 800; background: var(--pass-bg); }
     .tab-content { display: none; width: 100%; }
-    .tab-content.active { display: block; }
+    .tab-content.active { display: block; animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     
     .vacation-panel { display: flex; justify-content: space-between; align-items: center; background: var(--input-bg); padding: 18px 20px; border-radius: 14px; border: 1px solid var(--border-color); margin-bottom: 20px; }
     .switch { position: relative; display: inline-block; width: 56px; height: 30px; flex-shrink: 0; }
@@ -87,7 +101,8 @@
     .pending-card .pending-name { font-size: 36px; font-weight: 900; letter-spacing: -1.5px; }
     .overdue-badge { font-size: 13px; padding: 3px 10px; border-radius: 10px; font-weight: 800; display: inline-block; }
     
-    .batch-footer { position: sticky; bottom: 0; background: var(--bg-container); padding: 20px; border-top: 1px solid var(--border-color); display: none; z-index: 100; border-radius: 20px 20px 0 0; }
+    /* 🚀 하단 탭바를 가리지 않도록 플로팅 푸터 위치 조정 */
+    .batch-footer { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); width: calc(100% - 20px); max-width: 600px; background: var(--bg-container); padding: 15px; display: none; z-index: 999; border-radius: 16px; box-shadow: var(--shadow-lg); border: 1px solid var(--border-color); }
     .btn-copy-small { display: block; width: 100%; padding: 16px; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 12px; font-weight: 800; font-size: 18px; cursor: pointer; margin-top: 10px; text-align: center;}
     .loading-spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--primary); animation: spin 1s linear infinite; margin: 20px auto; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -100,9 +115,9 @@
     .modal-content .check-row { display:flex; align-items:center; gap:10px; margin-top:5px; cursor:pointer;}
     .modal-content input[type="checkbox"] { width: 20px; height: 20px; }
 
-    /* 🚀 v48 모바일 최적화 (글씨 크기 및 여백 대폭 축소) */
+    /* 📱 모바일 최적화 */
     @media (max-width: 768px) {
-      body { padding: 10px 5px; }
+      body { padding: 10px 5px 80px 5px; }
       .container { padding: 20px 15px; border-radius: 15px; }
       .header h2 { font-size: 22px; }
       #studentList, .pending-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
@@ -117,7 +132,7 @@
       .btn-small { font-size: 12px; padding: 8px 0; }
       .btn-group { gap: 2px; }
       
-      .tab { font-size: 14px; padding: 10px 4px; min-width: 60px; }
+      .tab { font-size: 14px; padding: 12px 0; }
       .controls-grid label { font-size: 15px; }
       .controls-grid input, .controls-grid select { font-size: 15px; padding: 12px 14px; }
       .stats-table th, .stats-table td { padding: 10px 4px; font-size: 13px; }
@@ -125,28 +140,22 @@
       .vacation-panel span:first-child { font-size: 16px !important; }
       .vacation-panel span:last-child { font-size: 12px !important; }
       .accordion-header { font-size: 16px; padding: 14px 15px; }
+      .batch-footer { bottom: 70px; padding: 12px; }
     }
     
     @media (max-width: 400px) {
       .student-card .name, .pending-card .pending-name { font-size: 22px; }
       .btn-small { font-size: 11px; padding: 6px 0; }
       .card-meta-info { font-size: 12px; }
+      .tab { font-size: 13px; }
     }
   </style>
 </head>
 <body>
 <div class="container">
   <div class="header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-    <h2>영단어 스마트 관리</h2>
+    <h2>단어 스마트 관리</h2>
     <button class="theme-toggle" onclick="toggleTheme()" id="themeIcon"></button>
-  </div>
-  
-  <div class="tabs">
-    <div class="tab active" onclick="switchTab('inputTab', this)">📝 입력</div>
-    <div class="tab" onclick="refreshDashboard('dashTab', this)">📊 미통과</div>
-    <div class="tab" onclick="refreshDashboard('overdueTab', this)">⚠️ 기한초과</div>
-    <div class="tab" onclick="loadGlobalStats(this)">📈 통계</div>
-    <div class="tab" onclick="loadManageStudents(this)">⚙️ 명부</div>
   </div>
   
   <div id="inputTab" class="tab-content active">
@@ -182,20 +191,29 @@
   <div id="manageTab" class="tab-content">
     <div style="margin-bottom:15px; display:flex; gap:10px;">
       <input type="text" id="manageSearch" placeholder="이름 검색..." onkeyup="filterManageTable()" style="flex:1; padding:14px; border-radius:10px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-main); font-size:16px;">
-      <button onclick="openStudentModal()" style="background:var(--primary); color:white; border:none; padding:0 15px; border-radius:10px; font-weight:700; font-size:14px; cursor:pointer;">+ 학생추가</button>
+      <button onclick="openStudentModal()" style="background:var(--primary); color:white; border:none; padding:0 15px; border-radius:10px; font-weight:700; font-size:14px; cursor:pointer;">+ 추가</button>
     </div>
     <div id="manageTableContainer" style="overflow-x:auto;"></div>
   </div>
 
   <div class="batch-footer" id="globalBatchFooter">
-    <div style="display:flex; flex-direction:column; gap:10px; max-width:600px; margin:0 auto;">
+    <div style="display:flex; flex-direction:column; gap:10px;">
       <div style="display:flex; gap:8px;">
         <input type="date" id="batchNewDeadline" style="flex:1; padding:12px; border-radius:10px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-main); font-size:16px;">
-        <button onclick="processBatchDeadline()" style="padding:12px; background:#f59e0b; color:white; border:none; border-radius:10px; font-weight:700;">전체 기한 연장</button>
+        <button onclick="processBatchDeadline()" style="padding:12px; background:#f59e0b; color:white; border:none; border-radius:10px; font-weight:700;">전체 연장</button>
       </div>
-      <button onclick="processBatchComplete()" style="width:100%; padding:16px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:800; font-size:18px;">✔️ 선택 항목 일괄 완료</button>
+      <button onclick="processBatchComplete()" style="width:100%; padding:14px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:800; font-size:16px;">✔️ 선택 항목 일괄 완료</button>
     </div>
   </div>
+</div>
+
+<!-- 🚀 기존 상단에 있던 탭을 모바일 바텀 네비게이션으로 위치 이동 및 텍스트 깔끔화 -->
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('inputTab', this)">입력</div>
+  <div class="tab" onclick="refreshDashboard('dashTab', this)">미통과</div>
+  <div class="tab" onclick="refreshDashboard('overdueTab', this)">기한초과</div>
+  <div class="tab" onclick="loadGlobalStats(this)">통계</div>
+  <div class="tab" onclick="loadManageStudents(this)">명부</div>
 </div>
 
 <div id="studentModal" class="modal-overlay" style="display:none;">
@@ -230,9 +248,6 @@
 </div>
 
 <script>
-  // ============================================================================
-  // 🚀 선생님의 Supabase 정보 적용 완료
-  // ============================================================================
   const SUPABASE_URL = "https://gcnyotbytdvdhqopienw.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjbnlvdGJ5dGR2ZGhxb3BpZW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNzI3MDYsImV4cCI6MjEwMjY0ODcwNn0.87ZPqxDJoTOW5frYEBkY1NlMv7fpcEsd_xxK6V77-W4";
 
@@ -286,7 +301,7 @@
       html += '<option value="1-5">1-5반</option><option value="1-6">1-6반</option><option value="1-7">1-7반</option>';
     }
     sel.innerHTML = html;
-    document.getElementById('studentList').innerHTML = `<p style="grid-column: 1/-1; text-align:center; color: var(--text-sub); font-size:18px; padding: 50px 0;">시험 반을 선택해주세요.</p>`;
+    document.getElementById('studentList').innerHTML = `<p style="grid-column: 1/-1; text-align:center; color: var(--text-sub); font-size:18px; padding: 50px 0;">상단에서 날짜와 반을 선택해주세요.</p>`;
     document.getElementById('saveBtn').style.display = 'none';
   }
 
@@ -301,6 +316,7 @@
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); 
     document.getElementById(tId).classList.add('active'); el.classList.add('active');
     document.getElementById('globalBatchFooter').style.display = 'none'; 
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function toggleAccordion(el) {

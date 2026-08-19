@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>단어 스마트 관리 v53</title>
+  <title>단어 스마트 관리 v54</title>
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
@@ -30,12 +30,21 @@
       --absent-bg: #2C2C2E; --absent-border: #3A3A3C; --absent-text: #A1A1AA;
     }
     
-    body { font-family: 'Pretendard', sans-serif; color: var(--text-main); padding: 15px 10px 100px 10px; transition: 0.3s; }
-    .container { width: 100%; max-width: 1200px; margin: 0 auto; background: var(--bg-container); padding: 30px 25px; border-radius: 24px; box-shadow: var(--shadow-lg); transition: 0.3s; }
+    /* 🚀 바디 여백 초기화 (고정 헤더를 위해) */
+    body { font-family: 'Pretendard', sans-serif; color: var(--text-main); padding: 0 10px 100px 10px; transition: 0.3s; }
+    .container { width: 100%; max-width: 1200px; margin: 0 auto; background: var(--bg-container); padding: 0 25px; border-radius: 24px; box-shadow: var(--shadow-lg); transition: 0.3s; min-height: 100vh;}
+    
+    /* 🚀 상단 고정 영역 (타이틀) */
+    .header { position: sticky; top: 0; z-index: 105; background: var(--bg-container); padding: 20px 0 10px 0; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0; }
     .header h2 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
     .theme-toggle { background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-sub); border-radius: 50%; width: 44px; height: 44px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
     .theme-toggle svg { width: 22px; height: 22px; }
+
+    /* 🚀 상단 고정 영역 (컨트롤 및 통계 현황판) */
+    .sticky-controls { position: sticky; top: 74px; z-index: 100; background: var(--bg-container); padding-bottom: 12px; border-bottom: 1px solid var(--border-color); margin-bottom: 15px; }
+    .sticky-controls.flex-row { display: flex; gap: 8px; align-items: center; }
     
+    /* 🚀 하단 내비게이션 바 */
     .tabs { 
       position: fixed; bottom: 0; left: 0; width: 100%;
       background: rgba(255, 255, 255, 0.85); 
@@ -52,9 +61,9 @@
     .tab-content.active { display: block; animation: fadeIn 0.3s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     
-    /* 🚀 2줄 압축 레이아웃 및 사이즈 축소된 방학모드 토글 */
+    /* 🚀 2줄 압축 입력 패널 */
     .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-    .input-row label { font-size: 13px; font-weight: 700; color: var(--text-sub); margin-bottom: 6px; display: block; margin-left: 4px; }
+    .input-row label { font-size: 14px; font-weight: 700; color: var(--text-sub); margin-bottom: 6px; display: block; margin-left: 4px; }
     .input-row input, .input-row select { width: 100%; padding: 14px 16px; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 12px; font-size: 15px; appearance: none; -webkit-appearance: none; outline: none; transition: border 0.2s; box-sizing: border-box; height: 48px; }
     .input-row input:focus, .input-row select:focus { border-color: var(--primary); }
     
@@ -66,16 +75,17 @@
     input:checked + .slider { background-color: var(--primary); }
     input:checked + .slider:before { transform: translateX(20px); }
     
-    /* 🚀 명부 부분 배경 분리 (연회색 영역) */
-    .list-area-wrapper { background: var(--bg-body); padding: 20px; border-radius: 20px; border: 1px solid var(--border-color); margin-top: 10px; }
-    
-    /* 🚀 통계 현황판 스타일 */
-    .summary-stats { display: flex; justify-content: space-around; background: var(--primary); color: white; padding: 12px 6px; border-radius: 14px; margin-bottom: 16px; box-shadow: var(--shadow-sm); }
-    .summary-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
-    .summary-label { font-size: 11px; opacity: 0.9; font-weight: 600; }
-    .summary-value { font-size: 18px; font-weight: 900; line-height: 1; }
+    /* 🚀 통계 현황판 (배경색 통일) */
+    .summary-stats { display: flex; justify-content: space-around; background: var(--input-bg); padding: 12px 6px; border-radius: 12px; margin-top: 12px; border: 1px solid var(--border-color); }
+    .summary-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .summary-label { font-size: 11px; font-weight: 700; color: var(--text-sub); }
+    .summary-value { font-size: 18px; font-weight: 900; line-height: 1; color: var(--text-main); }
+    #statPresent { color: var(--pass-text); }
+    #statRetest { color: var(--fail-text); }
+    #statPenalty { color: var(--danger); }
 
-    #studentList { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; width: 100%; }
+    /* 🚀 명단 및 카드 UI */
+    #studentList { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; width: 100%; padding-bottom: 20px;}
     .student-card { background: var(--bg-container); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px 12px; text-align: center; transition: 0.2s; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; box-shadow: var(--shadow-sm); }
     .student-card.pass { background: var(--pass-bg); border-color: var(--pass-border); }
     .student-card.fail { background: var(--fail-bg); border-color: var(--fail-border); }
@@ -93,9 +103,9 @@
     .btn-small { flex: 1; padding: 10px 0; border-radius: 8px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; background: transparent; color: var(--text-sub); transition: 0.2s; }
     .btn-small.active-fail { background: var(--fail-text); color: #ffffff; }
     .btn-small.active-absent { background: var(--absent-text); color: #ffffff; }
-    .btn-save { width: 100%; max-width: 600px; margin: 30px auto 10px auto; display: block; padding: 20px; background: var(--primary); color: white; border: none; border-radius: 16px; font-size: 20px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3); }
+    .btn-save { width: 100%; max-width: 600px; margin: 10px auto 30px auto; display: block; padding: 20px; background: var(--primary); color: white; border: none; border-radius: 16px; font-size: 20px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3); }
     
-    .stats-table { width: 100%; border-collapse: collapse; background: var(--bg-container); border-radius: 16px; overflow: hidden; margin-top: 10px; font-size: 15px; border: 1px solid var(--border-color);}
+    .stats-table { width: 100%; border-collapse: collapse; background: var(--bg-container); border-radius: 16px; overflow: hidden; margin-bottom: 20px; font-size: 15px; border: 1px solid var(--border-color);}
     .stats-table th { background: var(--input-bg); padding: 14px 8px; text-align: center; font-weight: 700; color: var(--text-sub); white-space: nowrap;}
     .stats-table td { padding: 14px 8px; text-align: center; border-bottom: 1px solid var(--border-color); }
     .val-pass { color: var(--pass-text); font-weight: 800; }
@@ -127,11 +137,15 @@
     .modal-content input[type="text"]:focus { border-color: var(--primary); }
     .modal-content .check-row { display:flex; align-items:center; gap:10px; margin-top:5px; cursor:pointer;}
     
-    /* 📱 모바일 최적화 (2열 입력, 3열 명단) */
+    /* 📱 v54 모바일 화면 최적화 (상단 고정 완벽 지원) */
     @media (max-width: 768px) {
-      body { padding: 10px 5px 85px 5px; background-color: var(--bg-body); }
-      .container { padding: 15px 10px; border-radius: 16px; box-shadow: none; background: transparent; }
+      body { padding: 0 5px 85px 5px; background-color: var(--bg-body); }
+      .container { padding: 0 10px; border-radius: 16px; box-shadow: none; background: transparent; min-height: calc(100vh - 85px); }
+      
+      /* 모바일 상단 고정 (배경색을 바디색과 맞추어 카드가 위로 말려들어가는 것 가림) */
+      .header { position: sticky; top: 0; z-index: 105; background: var(--bg-body); padding: 15px 5px 10px 5px; margin: 0 -10px; }
       .header h2 { font-size: 22px; }
+      .sticky-controls { position: sticky; top: 68px; z-index: 100; background: var(--bg-body); padding: 0 5px 12px 5px; margin: 0 -10px 15px -10px; border-bottom: 1px solid var(--border-color); }
       
       .input-row { gap: 8px; margin-bottom: 10px; }
       .input-row label { font-size: 12px; margin-bottom: 4px; }
@@ -139,16 +153,15 @@
       .compact-vacation-panel { height: 45px; padding: 0 12px; border-radius: 10px;}
       .compact-vacation-panel span { font-size: 13px !important; }
       
-      .list-area-wrapper { padding: 14px 10px; border-radius: 16px; }
-      .summary-stats { padding: 10px 4px; border-radius: 12px; margin-bottom: 14px; }
+      .summary-stats { padding: 10px 4px; margin-top: 10px; border-radius: 10px; }
       .summary-value { font-size: 16px; }
       .summary-label { font-size: 10px; }
 
+      /* 모바일 3명씩(3열) 배치 */
       #studentList, .pending-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
       
       .student-card { padding: 12px 6px; gap: 4px; border-radius: 14px; background: var(--bg-container); }
       .card-header { flex-direction: column; gap: 4px; margin-bottom: 4px; }
-      
       .student-card .name, .pending-card .pending-name { font-size: 20px; letter-spacing: -0.5px; margin: 2px 0; }
       .card-meta-info { font-size: 11px; text-align: center; display: flex; flex-direction: column; gap: 2px;}
       
@@ -176,14 +189,15 @@
 </head>
 <body>
 <div class="container">
-  <div class="header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+  <!-- 🚀 상단 고정: 메인 타이틀 -->
+  <div class="header">
     <h2>단어 스마트 관리</h2>
     <button class="theme-toggle" onclick="toggleTheme()" id="themeIcon"></button>
   </div>
   
   <div id="inputTab" class="tab-content active">
-    <!-- 🚀 2줄 압축 입력 패널 (상단 흰색 영역) -->
-    <div class="top-controls-wrapper">
+    <!-- 🚀 상단 고정: 2줄 입력 컨트롤 및 현황판 -->
+    <div class="sticky-controls">
       <div class="input-row">
         <div><label>시험 일자</label><input type="date" id="testDate" onchange="updateClassDropdown()"></div>
         <div><label>시험 반</label><select id="groupSelect" onchange="loadStudents()"></select></div>
@@ -193,7 +207,7 @@
         <div>
           <label>운영 모드</label>
           <div class="compact-vacation-panel">
-            <span style="font-size: 14px; font-weight: 800; color: var(--text-main);">🏖️ 방학 모드</span>
+            <span style="font-size: 13px; font-weight: 700; color: var(--text-main);">🏖️ 방학 모드</span>
             <label class="switch">
               <input type="checkbox" id="vacationToggle" onchange="toggleVacationMode()">
               <span class="slider"></span>
@@ -201,35 +215,33 @@
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- 🚀 명단 및 현황판 영역 (하단 회색 배경 영역) -->
-    <div class="list-area-wrapper">
       <div id="summaryStatsContainer"></div>
-      <div id="studentList">
-        <p style="grid-column: 1/-1; text-align:center; color: var(--text-sub); font-size:15px; padding: 40px 0;">상단에서 날짜와 반을 선택해주세요.</p>
-      </div>
-      <button class="btn-save" id="saveBtn" style="display:none;" onclick="saveAll()">결과 일괄 저장</button>
     </div>
+    
+    <!-- 스크롤되는 명단 영역 -->
+    <div id="studentList">
+      <p style="grid-column: 1/-1; text-align:center; color: var(--text-sub); font-size:15px; padding: 40px 0;">상단에서 날짜와 반을 선택해주세요.</p>
+    </div>
+    <button class="btn-save" id="saveBtn" style="display:none;" onclick="saveAll()">결과 일괄 저장</button>
   </div>
   
   <div id="dashTab" class="tab-content"><div id="pendingListContainer"></div></div>
   <div id="overdueTab" class="tab-content"><div id="overdueListContainer"></div></div>
   
   <div id="statsTab" class="tab-content">
-    <div style="margin-bottom:15px; display:flex; gap:8px;">
-      <select id="statsGroupSelect" onchange="filterStats()" style="flex:1; padding:12px; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-container); color:var(--text-main); font-size:14px; outline:none;">
+    <div class="sticky-controls flex-row">
+      <select id="statsGroupSelect" onchange="filterStats()" style="flex:1; padding:12px; border-radius:12px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-main); font-size:14px; outline:none;">
         <option value="">전체 반</option><option value="청운">청운</option><option value="백운A">백운A</option><option value="백운B">백운B</option><option value="백운C">백운C</option>
       </select>
-      <input type="text" id="statsSearch" placeholder="이름 검색..." onkeyup="filterStats()" style="flex:2; padding:12px; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-container); color:var(--text-main); font-size:14px; outline:none;">
+      <input type="text" id="statsSearch" placeholder="이름 검색..." onkeyup="filterStats()" style="flex:2; padding:12px; border-radius:12px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-main); font-size:14px; outline:none;">
     </div>
     <div id="statsTableContainer" style="overflow-x:auto;"></div>
   </div>
 
   <div id="manageTab" class="tab-content">
-    <div style="margin-bottom:15px; display:flex; gap:8px;">
-      <input type="text" id="manageSearch" placeholder="이름 검색..." onkeyup="filterManageTable()" style="flex:1; padding:12px; border-radius:12px; border:1px solid var(--border-color); background:var(--bg-container); color:var(--text-main); font-size:14px; outline:none;">
-      <button onclick="openStudentModal()" style="background:var(--primary); color:white; border:none; padding:0 16px; border-radius:12px; font-weight:700; font-size:14px; cursor:pointer;">+ 추가</button>
+    <div class="sticky-controls flex-row">
+      <input type="text" id="manageSearch" placeholder="이름 검색..." onkeyup="filterManageTable()" style="flex:1; padding:12px; border-radius:12px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-main); font-size:14px; outline:none;">
+      <button onclick="openStudentModal()" style="background:var(--primary); color:white; border:none; padding:12px 16px; border-radius:12px; font-weight:700; font-size:14px; cursor:pointer;">+ 추가</button>
     </div>
     <div id="manageTableContainer" style="overflow-x:auto;"></div>
   </div>
@@ -373,7 +385,7 @@
     return isAdj ? 20 : 36;
   }
 
-  // 🚀 통계 현황판 실시간 갱신 함수
+  // 🚀 실시간 통계 계산 로직
   function updateSummaryStats() {
     const cards = document.querySelectorAll('.student-card');
     if (cards.length === 0) return;
@@ -498,7 +510,7 @@
   function renderGrid(res) {
     const list = document.getElementById('studentList');
     const sumContainer = document.getElementById('summaryStatsContainer');
-    
+
     if (res.length === 0) { 
       sumContainer.innerHTML = '';
       list.innerHTML = `<p style='grid-column:1/-1; text-align:center; padding:40px 0;'>학생 명단이 없습니다.</p>`; 
@@ -569,7 +581,7 @@
     btns[3].className = (status === 'Absence') ? 'btn-small active-absent' : 'btn-small';
     card.querySelector('.status').innerText = status === 'Pass' ? 'Pass' : (status === 'Absence' ? '결석' : baseAction + (hasExtra ? ' (+빡지추가)' : ''));
     
-    updateSummaryStats(); // 🚀 버튼을 누를 때마다 현황판 실시간 갱신
+    updateSummaryStats(); // 버튼 클릭 시 현황판 실시간 갱신
   }
 
   async function saveAll() {

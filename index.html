@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>단어 스마트 관리 v56</title>
+  <title>단어 스마트 관리 v57</title>
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
@@ -11,7 +11,7 @@
     *, *::before, *::after { box-sizing: border-box !important; }
     html, body { overflow-x: hidden; width: 100%; margin: 0; padding: 0; background-color: var(--bg-body);}
     
-    /* 🚀 오리지널 컬러 팔레트로 원상 복구 */
+    /* 🚀 오리지널 컬러 팔레트 */
     :root {
       --bg-body: #F4F5F8; --bg-container: #FFFFFF; --text-main: #1F2937; --text-sub: #6B7280;
       --border-color: #E5E7EB; --primary: #4F46E5; --primary-hover: #4338CA; --tab-bg: #F3F4F6;
@@ -34,17 +34,17 @@
     body { font-family: 'Pretendard', sans-serif; color: var(--text-main); padding: 0 10px 100px 10px; transition: 0.3s; }
     .container { width: 100%; max-width: 1200px; margin: 0 auto; background: var(--bg-container); padding: 0 25px; border-radius: 24px; box-shadow: var(--shadow-lg); transition: 0.3s; min-height: 100vh;}
     
-    /* 🚀 상단 고정 영역 (타이틀) */
+    /* 상단 고정 영역 (타이틀) */
     .header { position: sticky; top: 0; z-index: 105; background: var(--bg-container); padding: 20px 0 10px 0; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0; }
     .header h2 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
     .theme-toggle { background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-sub); border-radius: 50%; width: 44px; height: 44px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
     .theme-toggle svg { width: 22px; height: 22px; }
 
-    /* 🚀 상단 고정 영역 (컨트롤 및 통계 현황판) */
+    /* 상단 고정 영역 (컨트롤 및 통계 현황판) */
     .sticky-controls { position: sticky; top: 74px; z-index: 100; background: var(--bg-container); padding-bottom: 12px; border-bottom: 1px solid var(--border-color); margin-bottom: 15px; }
     .sticky-controls.flex-row { display: flex; gap: 8px; align-items: center; }
     
-    /* 🚀 하단 내비게이션 바 */
+    /* 하단 내비게이션 바 */
     .tabs { 
       position: fixed; bottom: 0; left: 0; width: 100%;
       background: rgba(255, 255, 255, 0.85); 
@@ -61,7 +61,7 @@
     .tab-content.active { display: block; animation: fadeIn 0.2s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     
-    /* 🚀 2줄 압축 입력 패널 */
+    /* 2줄 압축 입력 패널 */
     .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
     .input-row label { font-size: 14px; font-weight: 700; color: var(--text-sub); margin-bottom: 6px; display: block; margin-left: 4px; }
     .input-row input, .input-row select { width: 100%; padding: 14px 16px; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 12px; font-size: 15px; appearance: none; -webkit-appearance: none; outline: none; transition: border 0.2s; box-sizing: border-box; height: 48px; }
@@ -75,7 +75,7 @@
     input:checked + .slider { background-color: var(--primary); }
     input:checked + .slider:before { transform: translateX(20px); }
     
-    /* 🚀 통계 현황판 (배경색 통일) */
+    /* 통계 현황판 */
     .summary-stats { display: flex; justify-content: space-around; background: var(--input-bg); padding: 12px 6px; border-radius: 12px; margin-top: 12px; border: 1px solid var(--border-color); }
     .summary-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
     .summary-label { font-size: 11px; font-weight: 700; color: var(--text-sub); }
@@ -84,7 +84,7 @@
     #statRetest { color: var(--fail-text); }
     #statPenalty { color: var(--danger); }
 
-    /* 🚀 명단 및 카드 UI */
+    /* 명단 및 카드 UI */
     #studentList { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; width: 100%; padding-bottom: 20px;}
     .student-card { background: var(--bg-container); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px 12px; text-align: center; transition: 0.2s; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; box-shadow: var(--shadow-sm); }
     .student-card.pass { background: var(--pass-bg); border-color: var(--pass-border); }
@@ -137,7 +137,7 @@
     .modal-content input[type="text"]:focus { border-color: var(--primary); }
     .modal-content .check-row { display:flex; align-items:center; gap:10px; margin-top:5px; cursor:pointer;}
     
-    /* 📱 모바일 최적화 (2열 입력, 3열 명단) */
+    /* 모바일 최적화 (2열 입력, 3열 명단) */
     @media (max-width: 768px) {
       body { padding: 0 5px 85px 5px; background-color: var(--bg-body); }
       .container { padding: 0 10px; border-radius: 16px; box-shadow: none; background: transparent; min-height: calc(100vh - 85px); }
@@ -170,6 +170,7 @@
       
       .btn-group { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; background: transparent; padding: 0; }
       .btn-small { font-size: 11px; padding: 8px 0; border-radius: 8px; background: var(--input-bg); }
+      [data-theme="dark"] .btn-small { background: rgba(255,255,255,0.05); }
       
       .tab { font-size: 13px; padding: 12px 0; }
       .stats-table th, .stats-table td { padding: 10px 4px; font-size: 12px; }
@@ -205,7 +206,6 @@
         <div>
           <label>운영 모드</label>
           <div class="compact-vacation-panel">
-            <!-- 이모티콘 제거됨 -->
             <span style="font-size: 13px; font-weight: 700; color: var(--text-main);">방학 모드</span>
             <label class="switch">
               <input type="checkbox" id="vacationToggle" onchange="toggleVacationMode()">
@@ -278,7 +278,8 @@
     <label>평일 시험요일 (예: 화, 수, 화수)</label>
     <input type="text" id="editWeekdayDay" placeholder="비워두셔도 됩니다">
     
-    <label>평일 시험반 (예: 1-5, 1-6)</label>
+    <!-- 🚀 평일 시험반 예시 문구 변경 -->
+    <label>평일 시험반 (예: 1-8, 1-10)</label>
     <input type="text" id="editWeekdayGroup" placeholder="비워두셔도 됩니다">
     
     <label>모의고사 등급 (예: 3, 5, -)</label>
@@ -290,7 +291,7 @@
     
     <div style="display:flex; gap:10px; margin-top:20px;">
       <button onclick="saveManageStudent()" style="flex:2; padding:14px; background:var(--primary); color:white; border:none; border-radius:12px; font-weight:800; font-size:16px; cursor:pointer;">저장하기</button>
-      <button onclick="closeStudentModal()" style="flex:1; padding:14px; background:var(--border-color); color:var(--text-main); border:none; border-radius:12px; font-weight:800; font-size:16px; cursor:pointer;">취소</button>
+      <button onclick="closeStudentModal()" style="flex:1; padding:14px; background:var(--border-color); color:var(--text-sub); border:none; border-radius:12px; font-weight:800; font-size:16px; cursor:pointer;">취소</button>
     </div>
   </div>
 </div>
@@ -347,7 +348,8 @@
     if (isVacation || isHoliday || (day !== 2 && day !== 3)) {
       html += '<option value="청운">청운</option><option value="백운A">백운A</option><option value="백운B">백운B</option><option value="백운C">백운C</option><option value="백운B,C 조정">백운B,C 조정대상자 반</option>';
     } else {
-      html += '<option value="1-5">1-5반</option><option value="1-6">1-6반</option><option value="1-7">1-7반</option>';
+      // 🚀 드롭다운 옵션을 1-8, 1-9, 1-10으로 변경
+      html += '<option value="1-8">1-8반</option><option value="1-9">1-9반</option><option value="1-10">1-10반</option>';
     }
     sel.innerHTML = html;
     document.getElementById('studentList').innerHTML = `<p style="grid-column: 1/-1; text-align:center; color: var(--text-sub); font-size:15px; padding: 40px 0;">상단에서 날짜와 반을 선택해주세요.</p>`;
@@ -384,7 +386,6 @@
     return isAdj ? 20 : 36;
   }
 
-  // 🚀 실시간 통계 계산 로직 (색상 통일)
   function updateSummaryStats() {
     const cards = document.querySelectorAll('.student-card');
     if (cards.length === 0) return;
@@ -461,7 +462,8 @@
         }
       });
 
-      const isWeekdayMode = ["1-5", "1-6", "1-7"].includes(g);
+      // 🚀 평일반 필터링 조건을 1-8, 1-9, 1-10으로 변경
+      const isWeekdayMode = ["1-8", "1-9", "1-10"].includes(g);
       const filteredStudents = [];
 
       (allStudents || []).forEach(student => {

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>단어 스마트 관리 v51</title>
+  <title>단어 스마트 관리 v52</title>
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
@@ -71,8 +71,8 @@
     .student-card.fail { background: var(--fail-bg); border-color: var(--fail-border); }
     .student-card.absent { background: var(--absent-bg); border-color: var(--absent-border); opacity: 0.8; }
     
-    /* 🚀 뱃지 줄바꿈 방지 */
-    .badge-wrapper { height: 24px; display: flex; gap: 4px; align-items: center; justify-content: center; width: 100%; margin-bottom: 4px; }
+    /* 🚀 뱃지 겹침 해결: height를 auto로 변경하여 내용만큼 동적으로 늘어나게 설정 */
+    .badge-wrapper { min-height: 24px; height: auto; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: center; width: 100%; margin-bottom: 4px; padding-bottom: 2px; }
     .fail-count-badge { font-size: 12px; font-weight: 800; background: var(--danger); color: white; padding: 4px 8px; border-radius: 8px; white-space: nowrap; }
     .prev-fail-badge { font-size: 12px; font-weight: 800; background: #FF9500; color: white; padding: 4px 8px; border-radius: 8px; white-space: nowrap; }
     
@@ -118,24 +118,24 @@
     .modal-content input[type="text"]:focus { border-color: var(--primary); }
     .modal-content .check-row { display:flex; align-items:center; gap:10px; margin-top:5px; cursor:pointer;}
     
-    /* 📱 v51 모바일 화면 (3열 강제 유지, 뱃지/이름 겹침 해결) */
+    /* 📱 v52 모바일 화면 최적화 (이름과 뱃지 겹침 현상 원천 차단) */
     @media (max-width: 768px) {
       body { padding: 10px 5px 85px 5px; background-color: var(--bg-body); }
       .container { padding: 15px 10px; border-radius: 16px; box-shadow: none; background: transparent; }
       .header h2 { font-size: 22px; }
       
-      /* 🚀 모바일 3명씩(3열) 배치 변경 */
+      /* 모바일 3명씩(3열) 배치 */
       #studentList, .pending-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
       
       .student-card { padding: 12px 6px; gap: 4px; border-radius: 14px; background: var(--bg-container); }
       .card-header { flex-direction: column; gap: 4px; margin-bottom: 4px; }
-      /* 이름 폰트 키우고 여백 조절 */
+      
       .student-card .name, .pending-card .pending-name { font-size: 20px; letter-spacing: -0.5px; margin: 2px 0; }
       .card-meta-info { font-size: 11px; text-align: center; display: flex; flex-direction: column; gap: 2px;}
       
-      /* 뱃지 안 깨지게, 높이 확보 */
-      .badge-wrapper { min-height: 22px; flex-wrap: wrap; gap: 4px; margin-bottom: 2px; }
-      .fail-count-badge, .prev-fail-badge { font-size: 10px; padding: 3px 6px; border-radius: 6px; white-space: nowrap; }
+      /* 🚀 동적 높이 조절: 뱃지가 줄바꿈되면 아래로 안전하게 늘어나도록 설정 */
+      .badge-wrapper { min-height: 22px; height: auto; gap: 3px; margin-bottom: 4px; }
+      .fail-count-badge, .prev-fail-badge { font-size: 10px; padding: 3px 5px; border-radius: 6px; white-space: nowrap; line-height: 1.2; }
       
       .status { font-size: 12px !important; margin-bottom: 6px !important; }
       

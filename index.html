@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>단어 스마트 관리 v46 (Supabase 에디션)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- 🚀 Supabase JS 라이브러리 연동 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <style>
+    *, *::before, *::after { box-sizing: border-box !important; }
+    html, body { overflow-x: hidden; width: 100%; margin: 0; padding: 0; }
+    :root {
+      --bg-body: #F4F5F8; --bg-container: #FFFFFF; --text-main: #1F2937; --text-sub: #6B7280;
+      --border-color: #E5E7EB; --primary: #4F46E5; --primary-hover: #4338CA; --tab-bg: #F3F4F6;
+      --tab-active: #FFFFFF; --input-bg: #F9FAFB;
+      --pass-bg: #E8F5E9; --pass-border: #BBF7D0; --pass-text: #166534;
+      --fail-bg: #FEF2F2; --fail-border: #FECACA; --fail-text: #991B1B;
+      --absent-bg: #F3F4F6; --absent-border: #D1D5DB; --absent-text: #4B5563;
+      --danger: #DC2626; --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05); --shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.04);
+    }
+    [data-theme="dark"] {
+      --bg-body: #111827; --bg-container: #1F2937; --text-main: #F9FAFB; --text-sub: #9CA3AF;
+      --border-color: #374151; --primary: #6366F1; --primary-hover: #818CF8; --tab-bg: #111827;
+      --tab-active: #374151; --input-bg: #374151;
+      --pass-bg: #132E21; --pass-border: #1E4633; --pass-text: #6EE7B7;
+      --fail-bg: #3E161C; --fail-border: #5E2028; --fail-text: #FCA5A5;
+      --absent-bg: #2C2C2E; --absent-border: #3A3A3C; --absent-text: #A1A1AA;
+    }
+    body { font-family: 'Pretendard', sans-serif; background-color: var(--bg-body); color: var(--text-main); padding: 15px 10px; transition: 0.3s; }
+    .container { width: 100%; max-width: 1200px; margin: 0 auto; background: var(--bg-container); padding: 30px 25px; border-radius: 20px; box-shadow: var(--shadow-lg); transition: 0.3s; }
+    .header h2 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -0.5px; }
+    .theme-toggle { background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-sub); border-radius: 50%; width: 50px; height: 50px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
+    .theme-toggle svg { width: 24px; height: 24px; }
+    .tabs { display: flex; background: var(--tab-bg); border-radius: 12px; padding: 5px; margin-bottom: 30px; width: 100%; flex-wrap: wrap; gap: 4px;}
+    .tab { flex: 1; min-width: 100px; text-align: center; padding: 12px; cursor: pointer; font-weight: 600; color: var(--text-sub); border-radius: 10px; font-size: 16px; transition: 0.2s; } 
+    .tab.active { background: var(--tab-active); color: var(--text-main); box-shadow: var(--shadow-sm); }
+    .tab-content { display: none; width: 100%; }
+    .tab-content.active { display: block; }
+    .vacation-panel { display: flex; justify-content: space-between; align-items: center; background: var(--input-bg); padding: 18px 20px; border-radius: 14px; border: 1px solid var(--border-color); margin-bottom: 20px; }
+    .switch { position: relative; display: inline-block; width: 56px; height: 30px; flex-shrink: 0; }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--border-color); transition: .3s; border-radius: 30px; }
+    .slider:before { position: absolute; content: ""; height: 22px; width: 22px; left: 4px; bottom: 4px; background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+    input:checked + .slider { background-color: var(--primary); }
+    input:checked + .slider:before { transform: translateX(26px); }
+    .controls-grid { display: flex; flex-direction: column; gap: 16px; margin-bottom: 30px; width: 100%; }
+    .controls-grid label { font-size: 18px; font-weight: 700; color: var(--text-sub); margin-bottom: 8px; display: block; } 
+    .controls-grid input, .controls-grid select { width: 100%; padding: 18px 20px; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 14px; font-size: 18px; appearance: none; -webkit-appearance: none;} 
+    #studentList { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 20px; width: 100%; }
+    .student-card { background: var(--bg-body); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px 12px; text-align: center; transition: 0.2s; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
+    .student-card.pass { background: var(--pass-bg); border-color: var(--pass-border); }
+    .student-card.fail { background: var(--fail-bg); border-color: var(--fail-border); }
+    .student-card.absent { background: var(--absent-bg); border-color: var(--absent-border); opacity: 0.8; }
+    .badge-wrapper { height: 28px; display: flex; gap: 6px; align-items: center; justify-content: center; width: 100%; margin-bottom: 4px; }
+    .fail-count-badge { font-size: 13px; font-weight: 800; background: var(--danger); color: white; padding: 4px 10px; border-radius: 12px; }
+    .prev-fail-badge { font-size: 13px; font-weight: 800; background: #ea580c; color: white; padding: 4px 10px; border-radius: 12px; }
+    .student-card .name { font-size: 36px; font-weight: 900; cursor: pointer; margin: 0; line-height: 1; letter-spacing: -1.5px; }
+    .card-meta-info { font-size: 16px; font-weight: 700; text-align: left; line-height: 1.2; flex-shrink: 0; }
+    .btn-group { display: flex; background: var(--input-bg); border-radius: 10px; padding: 4px; gap: 4px; width: 100%; margin-top: auto; }
+    .btn-small { flex: 1; padding: 10px 0; border-radius: 8px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; background: transparent; color: var(--text-sub); transition: 0.2s; }
+    .btn-small.active-fail { background: var(--fail-text); color: #ffffff; }
+    .btn-small.active-absent { background: var(--absent-text); color: #ffffff; }
+    .btn-save { width: 100%; max-width: 600px; margin: 30px auto; display: block; padding: 22px; background: var(--primary); color: white; border: none; border-radius: 16px; font-size: 22px; font-weight: 800; cursor: pointer; }
+    .stats-table { width: 100%; border-collapse: collapse; background: var(--bg-container); border-radius: 14px; overflow: hidden; margin-top: 10px; font-size: 16px;}
+    .stats-table th { background: var(--tab-bg); padding: 15px 10px; text-align: center; font-weight: 700; color: var(--text-sub); }
+    .stats-table td { padding: 15px 10px; text-align: center; border-bottom: 1px solid var(--border-color); }
+    .val-pass { color: var(--pass-text); font-weight: 800; }
+    .val-fail { color: var(--fail-text); font-weight: 800; }
+    .val-absent { color: var(--absent-text); font-weight: 800; }
+    .val-overdue { color: #ea580c; font-weight: 800; }
+    .accordion-header { background: var(--input-bg); border: 1px solid var(--border-color); padding: 18px 20px; font-size: 20px; font-weight: 700; cursor: pointer; border-radius: 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; user-select: none; }
+    .accordion-content { display: none; width: 100%; }
+    .accordion-content.active { display: block; animation: fadeIn 0.2s ease-out; }
+    .pending-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; width: 100%; }
+    .pending-card { background: var(--bg-container); border: 1px solid var(--border-color); border-radius: 14px; padding: 20px 8px; text-align: center; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: 0.2s; width: 100%; }
+    .pending-card.selected { background: var(--primary) !important; border-color: var(--primary); }
+    .pending-card.selected * { color: white !important; }
+    .pending-card .pending-name { font-size: 36px; font-weight: 900; letter-spacing: -1.5px; }
+    .overdue-badge { font-size: 13px; padding: 3px 10px; border-radius: 10px; font-weight: 800; display: inline-block; }
+    .batch-footer { position: sticky; bottom: 0; background: var(--bg-container); padding: 20px; border-top: 1px solid var(--border-color); display: none; z-index: 100; border-radius: 20px 20px 0 0; }
+    .btn-copy-small { display: block; width: 100%; padding: 16px; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 12px; font-weight: 800; font-size: 18px; cursor: pointer; margin-top: 10px; text-align: center;}
+    .loading-spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--primary); animation: spin 1s linear infinite; margin: 20px auto; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    @media (min-width: 769px) { .controls-grid { display: grid; grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 768px) {
+      .header h2 { font-size: 24px; }
+      #studentList, .pending-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      .student-card .name, .pending-card .pending-name { font-size: 42px; }
+      .tab { font-size: 14px; padding: 10px 4px; }
+      .stats-table { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+    <h2>영단어 스마트 관리</h2>
+    <button class="theme-toggle" onclick="toggleTheme()" id="themeIcon"></button>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('inputTab', this)">📝 결과 입력</div>
+    <div class="tab" onclick="refreshDashboard('dashTab', this)">📊 미통과 관리</div>
+    <div class="tab" onclick="refreshDashboard('overdueTab', this)">⚠️ 기한 초과 관리</div>
+    <div class="tab" onclick="loadGlobalStats(this)">📈 학생 통계</div>
+  </div>
+  
+  <div id="inputTab" class="tab-content active">
+    <div class="vacation-panel">
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <span style="font-size: 18px; font-weight: 800; color: var(--text-main);">🏖️ 방학 기간 모드</span>
+        <span style="font-size: 13px; font-weight: 600; color: var(--text-sub);">월~토 요일 무관 반별 시험 (1-5~1-7 비활성화)</span>
+      </div>
+      <label class="switch"><input type="checkbox" id="vacationToggle" onchange="toggleVacationMode()"><span class="slider"></span></label>
+    </div>
+    <div class="controls-grid">
+      <div><label>시험 일자</label><input type="date" id="testDate" onchange="updateClassDropdown()"></div>
+      <div><label>시험 반</label><select id="groupSelect" onchange="loadStudents()"></select></div>
+      <div style="grid-column: 1/-1;"><label>일괄 마감 기한</label><input type="date" id="deadlineDate"></div>
+    </div>
+    <div id="studentList"><p style="grid-column: 1/-1; text-align:center; color: var(--text-sub); font-size:18px; padding: 50px 0;">상단에서 날짜와 반을 선택해주세요.</p></div>
+    <button class="btn-save" id="saveBtn" style="display:none;" onclick="saveAll()">결과 일괄 저장</button>
+  </div>
+  
+  <div id="dashTab" class="tab-content"><div id="pendingListContainer"></div></div>
+  <div id="overdueTab" class="tab-content"><div id="overdueListContainer"></div></div>
+  
+  <div id="statsTab" class="tab-content">
+    <div style="margin-bottom:15px; display:flex; gap:10px;">
+      <select id="statsGroupSelect" onchange="filterStats()" style="flex:1; padding:14px; border-radius:10px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-main); font-size:16px;">
+        <option value="">전체 반</option><option value="청운">청운</option><option value="백운A">백운A</option><option value="백운B">백운B</option><option value="백운C">백운C</option>
+      </select>
+      <input type="text" id="statsSearch" placeholder="이름 검색..." onkeyup="filterStats()" style="flex:2; padding:14px; border-radius:10px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-main); font-size:16px;">
+    </div>
+    <div id="statsTableContainer" style="overflow-x:auto;"></div>
+  </div>
+
+  <div class="batch-footer" id="globalBatchFooter">
+    <div style="display:flex; flex-direction:column; gap:10px; max-width:600px; margin:0 auto;">
+      <div style="display:flex; gap:8px;">
+        <input type="date" id="batchNewDeadline" style="flex:1; padding:12px; border-radius:10px; border:1px solid var(--border-color); background:var(--input-bg); color:var(--text-main); font-size:16px;">
+        <button onclick="processBatchDeadline()" style="padding:12px; background:#f59e0b; color:white; border:none; border-radius:10px; font-weight:700;">전체 기한 연장</button>
+      </div>
+      <button onclick="processBatchComplete()" style="width:100%; padding:16px; background:var(--primary); color:white; border:none; border-radius:10px; font-weight:800; font-size:18px;">✔️ 선택 항목 일괄 완료</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ============================================================================
+  // ⚠️ 중요: Supabase URL과 ANON KEY를 2단계에서 발급받은 값으로 교체하세요!
+  // ============================================================================
+  const SUPABASE_URL = "여기에_Project_URL을_붙여넣으세요";
+  const SUPABASE_ANON_KEY = "여기에_anon_key를_붙여넣으세요";
+
+  // Supabase 초기화
+  const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const sunIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>`;
+  const moonIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>`;
+
+  const HOLIDAYS = [
+    "2026-01-01", "2026-02-16", "2026-02-17", "2026-02-18", "2026-03-01", "2026-03-02",
+    "2026-05-05", "2026-05-24", "2026-05-25", "2026-06-06", "2026-08-15", "2026-09-24",
+    "2026-09-25", "2026-09-26", "2026-10-03", "2026-10-09", "2026-12-25"
+  ];
+
+  function initTheme() {
+    const savedT = localStorage.getItem('appTheme') || 'dark'; 
+    document.documentElement.setAttribute('data-theme', savedT);
+    document.getElementById('themeIcon').innerHTML = savedT === 'dark' ? sunIcon : moonIcon;
+  }
+  function toggleTheme() { 
+    const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; 
+    document.documentElement.setAttribute('data-theme', t); localStorage.setItem('appTheme', t); 
+    document.getElementById('themeIcon').innerHTML = t === 'dark' ? sunIcon : moonIcon;
+  }
+  initTheme();
+
+  function initVacationMode() {
+    const savedVacation = localStorage.getItem('appVacationMode') === 'true';
+    const toggle = document.getElementById('vacationToggle');
+    if (toggle) toggle.checked = savedVacation;
+  }
+  function toggleVacationMode() {
+    const toggle = document.getElementById('vacationToggle');
+    localStorage.setItem('appVacationMode', toggle.checked);
+    updateClassDropdown();
+  }
+
+  function updateClassDropdown() {
+    const d = document.getElementById('testDate').value;
+    if (!d) return;
+    const dateObj = new Date(d);
+    const day = dateObj.getDay();
+    const isHoliday = HOLIDAYS.includes(d);
+    const isVacation = document.getElementById('vacationToggle').checked;
+    const sel = document.getElementById('groupSelect');
+    
+    let html = '<option value="">선택</option>';
+    if (isVacation || isHoliday || (day !== 2 && day !== 3)) {
+      html += '<option value="청운">청운</option><option value="백운A">백운A</option><option value="백운B">백운B</option><option value="백운C">백운C</option><option value="백운B,C 조정">백운B,C 조정대상자 반</option>';
+    } else {
+      html += '<option value="1-5">1-5반</option><option value="1-6">1-6반</option><option value="1-7">1-7반</option>';
+    }
+    sel.innerHTML = html;
+    document.getElementById('studentList').innerHTML = `<p style="grid-column: 1/-1; text-align:center; color: var(--text-sub); font-size:18px; padding: 50px 0;">시험 반을 선택해주세요.</p>`;
+    document.getElementById('saveBtn').style.display = 'none';
+  }
+
+  document.getElementById('testDate').valueAsDate = new Date();
+  const tm = new Date(); tm.setDate(tm.getDate() + 1); document.getElementById('deadlineDate').valueAsDate = tm;
+  document.getElementById('batchNewDeadline').valueAsDate = tm;
+  initVacationMode();
+  updateClassDropdown();
+
+  function switchTab(tId, el) { 
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); 
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); 
+    document.getElementById(tId).classList.add('active'); el.classList.add('active');
+    document.getElementById('globalBatchFooter').style.display = 'none'; 
+  }
+
+  function toggleAccordion(el) {
+    const content = el.nextElementSibling;
+    content.classList.toggle('active');
+    const icon = el.querySelector('.toggle-icon');
+    if (icon) icon.innerText = content.classList.contains('active') ? '▼' : '▶';
+  }
+
+  function calculateCutoff(grade, isAdj) {
+    if (!grade || grade === '-') return isAdj ? 10 : 12;
+    const g = parseInt(grade);
+    if (g <= 3) return isAdj ? 10 : 12;
+    if (g <= 5) return isAdj ? 15 : 24;
+    return isAdj ? 20 : 36;
+  }
+
+  // 🚀 프론트엔드에서 수파베이스 데이터를 직접 조회하고 가공하는 메인 함수
+  async function loadStudents() {
+    const g = document.getElementById('groupSelect').value; 
+    const targetDateStr = document.getElementById('testDate').value; 
+    if(!g || !targetDateStr) return;
+    
+    document.getElementById('studentList').innerHTML = `<div style="grid-column: 1/-1;"><div class="loading-spinner"></div><p style="text-align:center; color:var(--text-sub);">초고속 데이터베이스에서 불러오는 중...</p></div>`;
+
+    try {
+      const [{data: allStudents}, {data: allRecords}] = await Promise.all([
+        _supabase.from('students').select('*'),
+        _supabase.from('exam_records').select('*')
+      ]);
+
+      const today = new Date(); today.setHours(0,0,0,0);
+      const targetDateObj = new Date(targetDateStr);
+      const dayOfWeek = targetDateObj.getDay();
+      let filterDay = (dayOfWeek === 2) ? "화" : (dayOfWeek === 3) ? "수" : "";
+      
+      const statsMap = {};
+      const lastRecordMap = {};
+
+      (allRecords || []).forEach(r => {
+        const name = r.student_name;
+        const result = r.is_passed;
+        const deadline = new Date(r.deadline);
+        const rDateObj = new Date(r.test_date); rDateObj.setHours(0,0,0,0);
+        
+        if (!statsMap[name]) statsMap[name] = { pass: 0, fail: 0, overdue: 0, absent: 0 };
+        if (result === 'Pass') statsMap[name].pass++;
+        else if (result === 'Absence') statsMap[name].absent++; 
+        else if (result === 'Fail') {
+          statsMap[name].fail++;
+          if (deadline < today && r.status === '대기중') statsMap[name].overdue++;
+        }
+
+        if (rDateObj < targetDateObj) {
+          const rDateNum = rDateObj.getTime();
+          if (!lastRecordMap[name] || lastRecordMap[name].date < rDateNum) {
+            lastRecordMap[name] = { date: rDateNum, status: result };
+          }
+        }
+      });
+
+      const isWeekdayMode = ["1-5", "1-6", "1-7"].includes(g);
+      const filteredStudents = [];
+
+      (allStudents || []).forEach(student => {
+        let match = false;
+        if (isWeekdayMode) {
+          let sheetClass = student.weekday_group ? student.weekday_group.trim() : "";
+          let sheetDay = student.weekday_day ? student.weekday_day.trim() : "";
+          if (sheetClass === g && (filterDay === "" || sheetDay.indexOf(filterDay) !== -1)) match = true;
+        } else {
+          let sheetGroup = student.main_group ? student.main_group.trim() : "";
+          let isAdj = !!student.is_adjusted;
+          if (g === "백운B,C 조정") {
+            if ((sheetGroup === "백운B" || sheetGroup === "백운C") && isAdj) match = true;
+          } else if (g === "백운B" || g === "백운C") {
+            if (sheetGroup === g && !isAdj) match = true;
+          } else {
+            if (sheetGroup === g) match = true;
+          }
+        }
+
+        if (match) {
+          const name = student.name;
+          const failedLastTime = lastRecordMap[name] && lastRecordMap[name].status === 'Fail';
+          
+          let currentStatus = 'Pass';
+          let currentAction = '재시';
+          const todayRecord = (allRecords || []).find(r => r.test_date === targetDateStr && r.student_name === name);
+          if (todayRecord) {
+            currentStatus = todayRecord.is_passed;
+            if (currentStatus !== 'Pass') currentAction = todayRecord.action;
+          }
+
+          filteredStudents.push({ 
+            name: name, group: student.main_group, isPassed: currentStatus, action: currentAction, 
+            isAdjusted: !!student.is_adjusted, mockGrade: student.mock_grade || '-',
+            totalFails: statsMap[name] ? statsMap[name].fail : 0, failedLastTime: failedLastTime
+          });
+        }
+      });
+
+      renderGrid(filteredStudents);
+
+    } catch (err) {
+      console.error(err);
+      alert("데이터를 가져오는 중 오류가 발생했습니다.");
+    }
+  }
+
+  function renderGrid(res) {
+    const list = document.getElementById('studentList');
+    if (res.length === 0) { list.innerHTML = `<p style='grid-column:1/-1; text-align:center; padding:40px 0;'>해당 조건에 맞는 학생 명단이 DB에 없습니다.</p>`; return; }
+    list.innerHTML = res.map(s => {
+      let cardClass = s.isPassed === 'Fail' ? 'fail' : (s.isPassed === 'Absence' ? 'absent' : 'pass');
+      const actionStr = s.action || '재시';
+      const baseAction = actionStr.split('+')[0];
+      const hasExtra = actionStr.includes('빡지추가');
+
+      const failBadge = s.totalFails > 0 ? `<span class="fail-count-badge">누적 ${s.totalFails}</span>` : '';
+      const prevFailBadge = s.failedLastTime ? `<span class="prev-fail-badge">⚠️이전 미통과</span>` : '';
+      const badges = (failBadge || prevFailBadge) ? `<div class="badge-wrapper">${failBadge}${prevFailBadge}</div>` : `<div class="badge-wrapper"></div>`;
+      
+      return `
+      <div class="student-card ${cardClass}" id="card-${s.name}" data-name="${s.name}" data-group="${s.group}" data-status="${s.isPassed}" data-action="${baseAction}" data-extra="${hasExtra}">
+        ${badges}
+        <div class="card-header" style="display:flex; gap:12px; align-items:center; width:100%; justify-content:center; margin-bottom: 6px;">
+          <div class="name" onclick="setPass('${s.name}')">${s.name}</div>
+          <div class="card-meta-info">
+            <div>${s.group} / ${s.mockGrade}등급 ${s.isAdjusted ? '(조정)' : ''}</div>
+            <div style="color:var(--text-sub);">컷: ${calculateCutoff(s.mockGrade, s.isAdjusted)}개</div>
+          </div>
+        </div>
+        <div class="status" style="font-size:16px; font-weight:800; margin-bottom:10px;">
+          ${s.isPassed === 'Pass' ? 'Pass' : (s.isPassed === 'Absence' ? '결석' : baseAction + (hasExtra ? ' (+빡지추가)' : ''))}
+        </div>
+        <div class="btn-group">
+          <button class="btn-small ${s.isPassed === 'Fail' && baseAction === '재시' ? 'active-fail' : ''}" onclick="setBaseAction('${s.name}', '재시')">재시</button>
+          <button class="btn-small ${s.isPassed === 'Fail' && baseAction === '빡지' ? 'active-fail' : ''}" onclick="setBaseAction('${s.name}', '빡지')">빡지</button>
+          <button class="btn-small ${s.isPassed === 'Fail' && hasExtra ? 'active-fail' : ''}" onclick="toggleExtraAction('${s.name}')">빡지+</button>
+          <button class="btn-small ${s.isPassed === 'Absence' ? 'active-absent' : ''}" onclick="setAbsent('${s.name}')">결석</button>
+        </div>
+      </div>`;
+    }).join('');
+    document.getElementById('saveBtn').style.display = 'block';
+  }
+
+  function setBaseAction(n, a) { const c = document.getElementById('card-'+n); c.className = 'student-card fail'; c.setAttribute('data-status', 'Fail'); c.setAttribute('data-action', a); renderCardButtons(c); }
+  function toggleExtraAction(n) { const c = document.getElementById('card-'+n); const currentStatus = c.getAttribute('data-status'); if (currentStatus !== 'Fail') { c.className = 'student-card fail'; c.setAttribute('data-status', 'Fail'); c.setAttribute('data-action', '재시'); } const currentExtra = c.getAttribute('data-extra') === 'true'; c.setAttribute('data-extra', !currentExtra); renderCardButtons(c); }
+  function setPass(n) { const c = document.getElementById('card-'+n); c.className = 'student-card pass'; c.setAttribute('data-status', 'Pass'); c.setAttribute('data-action', '해당없음'); c.setAttribute('data-extra', 'false'); renderCardButtons(c); }
+  function setAbsent(n) { const c = document.getElementById('card-'+n); c.className = 'student-card absent'; c.setAttribute('data-status', 'Absence'); c.setAttribute('data-action', '결석'); c.setAttribute('data-extra', 'false'); renderCardButtons(c); }
+
+  function renderCardButtons(card) {
+    const status = card.getAttribute('data-status');
+    const baseAction = card.getAttribute('data-action');
+    const hasExtra = card.getAttribute('data-extra') === 'true';
+    const btns = card.querySelectorAll('.btn-small');
+    btns[0].className = (status === 'Fail' && baseAction === '재시') ? 'btn-small active-fail' : 'btn-small';
+    btns[1].className = (status === 'Fail' && baseAction === '빡지') ? 'btn-small active-fail' : 'btn-small';
+    btns[2].className = (status === 'Fail' && hasExtra) ? 'btn-small active-fail' : 'btn-small';
+    btns[3].className = (status === 'Absence') ? 'btn-small active-absent' : 'btn-small';
+    card.querySelector('.status').innerText = status === 'Pass' ? 'Pass' : (status === 'Absence' ? '결석' : baseAction + (hasExtra ? ' (+빡지추가)' : ''));
+  }
+
+  // 🚀 Supabase Upsert (저장 및 덮어쓰기) 최적화
+  async function saveAll() {
+    const upsertData = Array.from(document.querySelectorAll('.student-card')).map(c => {
+      const status = c.getAttribute('data-status');
+      let finalAction = c.getAttribute('data-action');
+      if (status === 'Fail' && c.getAttribute('data-extra') === 'true') finalAction += '+빡지추가';
+      
+      let dbStatus = status === 'Fail' ? '대기중' : (status === 'Absence' ? '결석처리' : '해당없음');
+
+      return { 
+        test_date: document.getElementById('testDate').value, 
+        main_group: c.getAttribute('data-group'), 
+        student_name: c.getAttribute('data-name'), 
+        deadline: document.getElementById('deadlineDate').value, 
+        is_passed: status, 
+        action: finalAction,
+        status: dbStatus
+      };
+    });
+    
+    const b = document.getElementById('saveBtn'); b.innerText = "저장 중..."; b.disabled = true;
+    
+    try {
+      const { error } = await _supabase.from('exam_records').upsert(upsertData, { onConflict: 'test_date, student_name' });
+      if (error) throw error;
+      alert("완벽하게 저장되었습니다! ⚡");
+      b.innerText = "결과 일괄 저장"; b.disabled = false;
+      loadStudents();
+    } catch (err) {
+      console.error(err);
+      alert("저장 실패"); b.disabled = false;
+    }
+  }
+
+  async function refreshDashboard(tabId, el) {
+    switchTab(tabId, el);
+    const container = tabId === 'dashTab' ? 'pendingListContainer' : 'overdueListContainer';
+    document.getElementById(container).innerHTML = `<div class="loading-spinner"></div><p style="text-align:center; color:var(--text-sub);">대기 명단을 추합하고 있습니다...</p>`;
+    document.getElementById('globalBatchFooter').style.display = 'none';
+    
+    try {
+      const [{data: allStudents}, {data: pendingRecords}] = await Promise.all([
+        _supabase.from('students').select('*'),
+        _supabase.from('exam_records').select('*').eq('status', '대기중')
+      ]);
+
+      const studentMeta = {};
+      (allStudents || []).forEach(s => {
+        studentMeta[s.name] = { isAdj: !!s.is_adjusted, mockGrade: s.mock_grade || '-' };
+      });
+
+      const processedData = {};
+      (pendingRecords || []).forEach(r => {
+        const dStr = r.test_date;
+        if (!processedData[dStr]) processedData[dStr] = [];
+        const meta = studentMeta[r.student_name] || { isAdj: false, mockGrade: '-' };
+        processedData[dStr].push({
+          id: r.id, group: r.main_group, name: r.student_name, action: r.action,
+          deadline: r.deadline, isAdjusted: meta.isAdj, mockGrade: meta.mockGrade
+        });
+      });
+
+      renderDashboards(processedData, tabId);
+    } catch (err) {
+      console.error(err); alert("데이터를 불러오지 못했습니다.");
+    }
+  }
+
+  function renderDashboards(data, tabId) {
+    const isOT = tabId === 'overdueTab';
+    const con = document.getElementById(isOT ? 'overdueListContainer' : 'pendingListContainer');
+    con.innerHTML = ""; const today = new Date(); today.setHours(0,0,0,0);
+    const dates = Object.keys(data).sort().reverse(); let total = 0;
+    
+    dates.forEach(d => {
+      const items = data[d].filter(it => { const dDate = new Date(it.deadline); dDate.setHours(0,0,0,0); return isOT ? dDate < today : dDate >= today; });
+      if (items.length === 0) return;
+      total += items.length;
+      
+      const grouped = { '재시': {}, '빡지': {} };
+      items.forEach(it => { 
+        const baseAction = it.action.split('+')[0];
+        const key = (baseAction === '재시' || baseAction === '빡지') ? baseAction : '재시';
+        if(!grouped[key]) grouped[key] = {}; if(!grouped[key][it.group]) grouped[key][it.group] = []; grouped[key][it.group].push(it); 
+      });
+      
+      let html = `<div class="accordion-header" onclick="toggleAccordion(this)"><span>📅 ${d} (${items.length}명)</span><span class="toggle-icon">▼</span></div><div class="accordion-content active">`;
+      ['재시', '빡지'].forEach(a => {
+        if (grouped[a] && Object.keys(grouped[a]).length > 0) {
+          html += `<div style="font-weight:800; font-size:20px; margin:15px 0 8px;">- ${a}</div>`;
+          for (const g in grouped[a]) { 
+            html += `<div style="font-size:16px; font-weight:700; color:var(--text-sub); margin-bottom:8px;">${g}</div><div class="pending-grid">`;
+            html += grouped[a][g].map(s => {
+              const cutoff = calculateCutoff(s.mockGrade, s.isAdjusted);
+              const hasExtra = s.action.includes('빡지추가');
+              const extraBadge = hasExtra ? '<span class="overdue-badge" style="background:#ea580c; color:white; margin-top:4px;">빡지추가</span>' : '';
+              return `<div class="pending-card" data-id="${s.id}" onclick="toggleSelect(this)">
+                        <span class="pending-name">${s.name}</span>
+                        <div style="font-size:15px; font-weight:700; color:var(--text-sub); display:flex; gap:4px; flex-direction:column; align-items:center;">
+                          <span>컷: ${cutoff}개 | ${isOT ? '기한초과' : a}</span>${extraBadge}
+                        </div>
+                      </div>`;
+            }).join('');
+            html += `</div>`;
+          }
+        }
+      });
+      html += `<div><button class="btn-copy-small" onclick="copyText('${d}', '${items[0].deadline}', '${tabId}', this)">📋 공지 복사</button></div></div>`;
+      con.innerHTML += html;
+    });
+    document.getElementById('globalBatchFooter').style.display = total > 0 ? 'block' : 'none';
+  }
+
+  function toggleSelect(el) { el.classList.toggle('selected'); }
+  
+  async function processBatchDeadline() {
+    const activeTabId = document.querySelector('.tab-content.active').id;
+    const targetIds = Array.from(document.querySelectorAll(`#${activeTabId} .pending-card`)).map(c => c.getAttribute('data-id'));
+    const newDate = document.getElementById('batchNewDeadline').value;
+    if (targetIds.length === 0 || !newDate) return alert("대상 학생이 없거나 날짜를 선택하지 않았습니다.");
+    if(!confirm(`${targetIds.length}명의 기한을 ${newDate}로 연장하시겠습니까?`)) return;
+    
+    const { error } = await _supabase.from('exam_records').update({ deadline: newDate }).in('id', targetIds);
+    if (!error) { alert("기한 일괄 수정 완료!"); refreshDashboard(activeTabId, document.querySelector(`.tab[onclick*="${activeTabId}"]`)); }
+  }
+  
+  async function processBatchComplete() {
+    const activeTabId = document.querySelector('.tab-content.active').id;
+    const targetIds = Array.from(document.querySelectorAll(`#${activeTabId} .pending-card.selected`)).map(c => c.getAttribute('data-id'));
+    if (targetIds.length === 0) return alert("학생을 먼저 선택해주세요.");
+    
+    const { error } = await _supabase.from('exam_records').update({ status: '완료' }).in('id', targetIds);
+    if (!error) { alert("완료 처리 되었습니다."); refreshDashboard(activeTabId, document.querySelector(`.tab[onclick*="${activeTabId}"]`)); }
+  }
+
+  let allStats = [];
+  async function loadGlobalStats(el) {
+    switchTab('statsTab', el);
+    document.getElementById('statsTableContainer').innerHTML = `<div class="loading-spinner"></div><p style="text-align:center; color:var(--text-sub);">초고속 통계 산출 중...</p>`;
+    
+    try {
+      const [{data: allStudents}, {data: allRecords}] = await Promise.all([
+        _supabase.from('students').select('*'),
+        _supabase.from('exam_records').select('*')
+      ]);
+
+      const statsMap = {};
+      const today = new Date(); today.setHours(0,0,0,0);
+      (allRecords || []).forEach(r => {
+        const name = r.student_name;
+        if (!statsMap[name]) statsMap[name] = { pass: 0, fail: 0, overdue: 0, absent: 0 };
+        if (r.is_passed === 'Pass') statsMap[name].pass++;
+        else if (r.is_passed === 'Absence') statsMap[name].absent++;
+        else if (r.is_passed === 'Fail') {
+          statsMap[name].fail++;
+          if (new Date(r.deadline) < today && r.status === '대기중') statsMap[name].overdue++;
+        }
+      });
+
+      allStats = (allStudents || []).map(s => {
+        const st = statsMap[s.name] || { pass: 0, fail: 0, overdue: 0, absent: 0 };
+        return { group: s.main_group, name: s.name, ...st };
+      });
+      renderStatsTable(allStats);
+    } catch (err) { console.error(err); alert("오류 발생"); }
+  }
+  
+  function renderStatsTable(data) {
+    let html = `<table class="stats-table"><thead><tr><th>반</th><th>이름</th><th>통과</th><th>미통과</th><th>결석</th><th>미준수</th></tr></thead><tbody>`;
+    data.forEach(s => { html += `<tr><td>${s.group}</td><td style="font-weight:800;">${s.name}</td><td class="val-pass">${s.pass}</td><td class="val-fail">${s.fail}</td><td>${s.absent}</td><td class="val-overdue">${s.overdue}</td></tr>`; });
+    document.getElementById('statsTableContainer').innerHTML = html + `</tbody></table>`;
+  }
+  
+  function filterStats() {
+    const searchVal = document.getElementById('statsSearch').value.toLowerCase();
+    const groupVal = document.getElementById('statsGroupSelect').value;
+    const filtered = allStats.filter(s => (s.name.toLowerCase().includes(searchVal)) && (groupVal === "" || s.group === groupVal));
+    renderStatsTable(filtered);
+  }
+
+  async function copyText(date, dl, tabId, btn) {
+    const originalText = btn.innerText; btn.innerText = "복사 중...";
+    const { data } = await _supabase.from('exam_records').select('*').eq('status', '대기중');
+    
+    const today = new Date(); today.setHours(0,0,0,0);
+    const oMap = {}; const rMap = {}; const pMap = {}; const ppMap = {};
+    
+    (data || []).forEach(r => {
+      const dDate = new Date(r.deadline); dDate.setHours(0,0,0,0);
+      const it = { group: r.main_group, name: r.student_name, action: r.action };
+      
+      if (dDate < today) { 
+        if(!oMap[r.test_date]) oMap[r.test_date] = []; oMap[r.test_date].push(it); 
+      } else if (r.test_date === date && tabId === 'dashTab') {
+        const baseAction = it.action.split('+')[0];
+        const m = baseAction === '빡지' ? pMap : rMap;
+        if(!m[it.group]) m[it.group] = [];
+        let displayName = it.name;
+        if (it.action.includes('빡지추가')) {
+          displayName += ' (빡지추가)';
+          if(!ppMap[it.group]) ppMap[it.group] = [];
+          ppMap[it.group].push(it.name); 
+        }
+        m[it.group].push(displayName);
+      }
+    });
+    
+    let txt = tabId === 'dashTab' ? `[${date} 미통과자 명단]\n` : "";
+    if(tabId === 'dashTab') {
+      if(Object.keys(rMap).length > 0) { txt += `\n-재시\n`; for (const g in rMap) txt += `${g}: ${rMap[g].join(', ')}\n`; }
+      if(Object.keys(pMap).length > 0) { txt += `\n-빡지\n`; for (const g in pMap) txt += `${g}: ${pMap[g].join(', ')}\n`; }
+      if(Object.keys(ppMap).length > 0) { txt += `\n-빡지추가 (위 명단 중 가중 페널티)\n`; for (const g in ppMap) txt += `${g}: ${ppMap[g].join(', ')}\n`; }
+      txt += `\n마감 기한 : ${dl}까지\n`;
+    }
+    if(Object.keys(oMap).length > 0) {
+      if (tabId === 'dashTab') txt += `\n-----------------------\n`;
+      txt += `\n[기한 초과자 명단]\n`;
+      Object.keys(oMap).sort().forEach(d => {
+        txt += `\n${d}\n`;
+        oMap[d].forEach(s => { 
+          let displayAction = s.action.split('+').join(', ');
+          txt += `${s.group} - ${s.name} (${displayAction})\n`; 
+        });
+      });
+      txt += `\n위 해당자들은 빡지 추가입니다.`;
+    }
+    navigator.clipboard.writeText(txt).then(() => { alert("명단이 복사되었습니다!"); btn.innerText = originalText; });
+  }
+</script>
+</body>
+</html>

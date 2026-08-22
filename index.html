@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>단어 스마트 관리 v60</title>
+  <title>단어 스마트 관리 v61</title>
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
@@ -11,7 +11,7 @@
     *, *::before, *::after { box-sizing: border-box !important; }
     html, body { overflow-x: hidden; width: 100%; margin: 0; padding: 0; background-color: var(--bg-body);}
     
-    /* 🚀 오리지널 컬러 팔레트 */
+    /* 오리지널 컬러 팔레트 유지 */
     :root {
       --bg-body: #F4F5F8; --bg-container: #FFFFFF; --text-main: #1F2937; --text-sub: #6B7280;
       --border-color: #E5E7EB; --primary: #4F46E5; --primary-hover: #4338CA; --tab-bg: #F3F4F6;
@@ -34,13 +34,12 @@
     body { font-family: 'Pretendard', sans-serif; color: var(--text-main); padding: 0 10px 100px 10px; transition: 0.3s; }
     .container { width: 100%; max-width: 1200px; margin: 0 auto; background: var(--bg-container); padding: 0 25px; border-radius: 24px; box-shadow: var(--shadow-lg); transition: 0.3s; min-height: 100vh;}
     
-    /* 상단 고정 영역 (타이틀) */
+    /* 상단 고정 영역 */
     .header { position: sticky; top: 0; z-index: 105; background: var(--bg-container); padding: 20px 0 10px 0; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0; }
     .header h2 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
     .theme-toggle { background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-sub); border-radius: 50%; width: 44px; height: 44px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
     .theme-toggle svg { width: 22px; height: 22px; }
 
-    /* 상단 고정 영역 (컨트롤 및 통계 현황판) */
     .sticky-controls { position: sticky; top: 74px; z-index: 100; background: var(--bg-container); padding-bottom: 12px; border-bottom: 1px solid var(--border-color); margin-bottom: 15px; }
     .sticky-controls.flex-row { display: flex; gap: 8px; align-items: center; }
     
@@ -61,7 +60,7 @@
     .tab-content.active { display: block; animation: fadeIn 0.2s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     
-    /* 2줄 압축 입력 패널 */
+    /* 입력 패널 */
     .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
     .input-row label { font-size: 14px; font-weight: 700; color: var(--text-sub); margin-bottom: 6px; display: block; margin-left: 4px; }
     .input-row input, .input-row select { width: 100%; padding: 14px 16px; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 12px; font-size: 15px; appearance: none; -webkit-appearance: none; outline: none; transition: border 0.2s; box-sizing: border-box; height: 48px; }
@@ -75,7 +74,6 @@
     input:checked + .slider { background-color: var(--primary); }
     input:checked + .slider:before { transform: translateX(20px); }
     
-    /* 통계 현황판 */
     .summary-stats { display: flex; justify-content: space-around; background: var(--input-bg); padding: 12px 6px; border-radius: 12px; margin-top: 12px; border: 1px solid var(--border-color); }
     .summary-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
     .summary-label { font-size: 11px; font-weight: 700; color: var(--text-sub); }
@@ -137,7 +135,6 @@
     .modal-content input[type="text"]:focus { border-color: var(--primary); }
     .modal-content .check-row { display:flex; align-items:center; gap:10px; margin-top:5px; cursor:pointer;}
     
-    /* 모바일 최적화 (2열 입력, 3열 명단) */
     @media (max-width: 768px) {
       body { padding: 0 5px 85px 5px; background-color: var(--bg-body); }
       .container { padding: 0 10px; border-radius: 16px; box-shadow: none; background: transparent; min-height: calc(100vh - 85px); }
@@ -195,7 +192,6 @@
   </div>
   
   <div id="inputTab" class="tab-content active">
-    <!-- 상단 고정: 2줄 입력 컨트롤 및 현황판 -->
     <div class="sticky-controls">
       <div class="input-row">
         <div><label>시험 일자</label><input type="date" id="testDate" onchange="updateClassDropdown()"></div>
@@ -217,7 +213,6 @@
       <div id="summaryStatsContainer"></div>
     </div>
     
-    <!-- 스크롤 명단 영역 -->
     <div id="studentList">
       <p style="grid-column: 1/-1; text-align:center; color: var(--text-sub); font-size:15px; padding: 40px 0;">상단에서 날짜와 반을 선택해주세요.</p>
     </div>
@@ -296,10 +291,8 @@
 </div>
 
 <script>
-  // 🚀 선생님의 Supabase 정보
   const SUPABASE_URL = "https://gcnyotbytdvdhqopienw.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjbnlvdGJ5dGR2ZGhxb3BpZW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNzI3MDYsImV4cCI6MjEwMjY0ODcwNn0.87ZPqxDJoTOW5frYEBkY1NlMv7fpcEsd_xxK6V77-W4";
-
   const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const sunIcon = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>`;
@@ -425,7 +418,7 @@
     document.getElementById('summaryStatsContainer').innerHTML = '';
 
     try {
-      // 🚀 v60: 1000개 제한 해제 및 무조건 최신순(id 큰 순서) 정렬 적용
+      // 🚀 v61: 무조건 최신 데이터를 먼저 뽑아오는 맵(Map) 자료구조 적용
       const [{data: allStudents}, {data: allRecords}] = await Promise.all([
         _supabase.from('students').select('*').limit(2000),
         _supabase.from('exam_records').select('*').order('id', { ascending: false }).limit(10000)
@@ -436,15 +429,14 @@
       const dayOfWeek = targetDateObj.getDay();
       let filterDay = (dayOfWeek === 2) ? "화" : (dayOfWeek === 3) ? "수" : "";
       
-      // 🚀 최신순으로 가져왔으므로, 무조건 먼저 발견되는 것이 진짜 최신 데이터임!
-      const uniqueRecordsMap = {};
+      const uniqueRecordsMap = new Map();
       (allRecords || []).forEach(r => {
         const key = r.test_date + '_' + r.student_name;
-        if (!uniqueRecordsMap[key]) {
-          uniqueRecordsMap[key] = r;
+        if (!uniqueRecordsMap.has(key)) {
+          uniqueRecordsMap.set(key, r);
         }
       });
-      const uniqueRecords = Object.values(uniqueRecordsMap);
+      const uniqueRecords = Array.from(uniqueRecordsMap.values());
 
       const statsMap = {};
       const lastRecordMap = {};
@@ -500,14 +492,17 @@
           
           let currentStatus = 'Pass';
           let currentAction = '재시';
+          let currentDbStatus = '해당없음'; // 🚀 보호막 변수
+          
           const todayRecord = uniqueRecords.find(r => r.test_date === targetDateStr && r.student_name === name);
           if (todayRecord) {
             currentStatus = todayRecord.is_passed;
-            if (currentStatus !== 'Pass') currentAction = todayRecord.action;
+            currentAction = todayRecord.action;
+            currentDbStatus = todayRecord.status; // 🚀 완료 처리된 상태 기억
           }
 
           filteredStudents.push({ 
-            name: name, group: student.main_group, isPassed: currentStatus, action: currentAction, 
+            name: name, group: student.main_group, isPassed: currentStatus, action: currentAction, dbStatus: currentDbStatus,
             isAdjusted: !!student.is_adjusted, mockGrade: student.mock_grade || '-',
             totalFails: statsMap[name] ? statsMap[name].fail : 0, failedLastTime: failedLastTime
           });
@@ -551,8 +546,9 @@
       
       const idSafe = s.name.replace(/\s/g, ''); 
       
+      // 🚀 data-db-status를 HTML 안에 심어두어 저장 시 참조
       return `
-      <div class="student-card ${cardClass}" id="card-${idSafe}" data-name="${s.name}" data-group="${s.group}" data-status="${s.isPassed}" data-action="${baseAction}" data-extra="${hasExtra}">
+      <div class="student-card ${cardClass}" id="card-${idSafe}" data-name="${s.name}" data-group="${s.group}" data-status="${s.isPassed}" data-action="${baseAction}" data-extra="${hasExtra}" data-db-status="${s.dbStatus}">
         ${badges}
         <div class="card-header">
           <div class="name" onclick="setPass('${idSafe}')">${s.name}</div>
@@ -596,12 +592,26 @@
     updateSummaryStats(); 
   }
 
+  // 🚀 v61: 상태 보호막 기능 추가 (이미 '완료' 처리된 기록 보호)
   async function saveAll() {
     const upsertData = Array.from(document.querySelectorAll('.student-card')).map(c => {
       const status = c.getAttribute('data-status');
       let finalAction = c.getAttribute('data-action');
       if (status === 'Fail' && c.getAttribute('data-extra') === 'true') finalAction += '+빡지추가';
-      let dbStatus = status === 'Fail' ? '대기중' : (status === 'Absence' ? '결석처리' : '해당없음');
+      
+      // 🚀 데이터베이스에 저장되어 있던 기존 상태 불러오기
+      let currentDbStatus = c.getAttribute('data-db-status') || '대기중';
+      let dbStatus;
+      
+      if (status === 'Fail') {
+         // 빨간 카드(미통과)인데, 예전에 미통과 탭에서 '완료'를 눌렀던 아이라면 '완료' 상태 그대로 유지! (보호막)
+         dbStatus = (currentDbStatus === '완료') ? '완료' : '대기중';
+      } else if (status === 'Absence') {
+         dbStatus = '결석처리';
+      } else {
+         dbStatus = '해당없음';
+      }
+
       return { 
         test_date: document.getElementById('testDate').value, 
         main_group: c.getAttribute('data-group'), 
@@ -620,11 +630,13 @@
     
     const b = document.getElementById('saveBtn'); b.innerText = "저장 중..."; b.disabled = true;
     try {
+      // 해당 날짜의 오래된 중복 찌꺼기 기록을 모두 깨끗하게 청소
       await _supabase.from('exam_records').delete().eq('test_date', targetDate).in('student_name', names);
+      // 보호막이 적용된 최신 데이터 1줄씩만 삽입
       const { error } = await _supabase.from('exam_records').insert(upsertData);
       
       if (error) throw error;
-      alert("성공적으로 저장되었습니다! ⚡\n(이제 기존 화면은 그대로 유지됩니다.)"); 
+      alert("성공적으로 저장되었습니다! ⚡\n(이제 입력 내용이 초기화되지 않고 안전하게 유지됩니다.)"); 
       b.innerText = "결과 일괄 저장"; 
       b.disabled = false; 
     } catch (err) { console.error(err); alert("저장 실패"); b.disabled = false; }
@@ -636,7 +648,6 @@
     document.getElementById(container).innerHTML = `<div class="loading-spinner"></div><p style="text-align:center; color:var(--text-sub);">명단을 추합하고 있습니다...</p>`;
     document.getElementById('globalBatchFooter').style.display = 'none';
     try {
-      // 🚀 v60: 1000개 제한 해제 및 무조건 최신순(id 큰 순서) 정렬 적용
       const [{data: allStudents}, {data: allRecords}] = await Promise.all([ 
         _supabase.from('students').select('*').limit(2000), 
         _supabase.from('exam_records').select('*').order('id', { ascending: false }).limit(10000)
@@ -644,14 +655,15 @@
       const studentMeta = {};
       (allStudents || []).forEach(s => { studentMeta[s.name] = { isAdj: !!s.is_adjusted, mockGrade: s.mock_grade || '-' }; });
       
-      const uniqueRecordsMap = {};
+      // 🚀 v61: 미통과 탭에서도 맵(Map)을 사용해 가장 최신 기록만 필터링
+      const uniqueRecordsMap = new Map();
       (allRecords || []).forEach(r => { 
         const key = r.test_date + '_' + r.student_name;
-        if (!uniqueRecordsMap[key]) {
-          uniqueRecordsMap[key] = r;
+        if (!uniqueRecordsMap.has(key)) {
+          uniqueRecordsMap.set(key, r);
         }
       });
-      const pendingRecords = Object.values(uniqueRecordsMap).filter(r => r.status === '대기중');
+      const pendingRecords = Array.from(uniqueRecordsMap.values()).filter(r => r.status === '대기중');
       
       const processedData = {};
       (pendingRecords || []).forEach(r => {
@@ -686,9 +698,13 @@
       ['재시', '빡지'].forEach(a => {
         if (grouped[a] && Object.keys(grouped[a]).length > 0) {
           html += `<div style="font-weight:800; font-size:18px; margin:15px 0 8px;">- ${a}</div>`;
-          for (const g in grouped[a]) { 
+          
+          // 🚀 v61: 반 이름 기준 알파벳 순 정렬, 학생 이름 기준 가나다 순 정렬
+          const sortedGroups = Object.keys(grouped[a]).sort();
+          for (const g of sortedGroups) { 
             html += `<div style="font-size:15px; font-weight:700; color:var(--text-sub); margin-bottom:8px;">${g}</div><div class="pending-grid">`;
-            html += grouped[a][g].map(s => {
+            
+            html += grouped[a][g].sort((s1, s2) => s1.name.localeCompare(s2.name)).map(s => {
               const cutoff = calculateCutoff(s.mockGrade, s.isAdjusted);
               const hasExtra = s.action.includes('빡지추가');
               const extraBadge = hasExtra ? '<span class="overdue-badge" style="background:var(--warning); color:white; margin-top:4px;">빡지추가</span>' : '';
@@ -734,20 +750,19 @@
     switchTab('statsTab', el);
     document.getElementById('statsTableContainer').innerHTML = `<div class="loading-spinner"></div><p style="text-align:center; color:var(--text-sub);">초고속 통계 산출 중...</p>`;
     try {
-      // 🚀 v60: 1000개 제한 해제 및 무조건 최신순(id 큰 순서) 정렬 적용
       const [{data: allStudents}, {data: allRecords}] = await Promise.all([ 
         _supabase.from('students').select('*').limit(2000), 
         _supabase.from('exam_records').select('*').order('id', { ascending: false }).limit(10000) 
       ]);
       
-      const uniqueRecordsMap = {};
+      const uniqueRecordsMap = new Map();
       (allRecords || []).forEach(r => { 
         const key = r.test_date + '_' + r.student_name;
-        if (!uniqueRecordsMap[key]) {
-          uniqueRecordsMap[key] = r;
+        if (!uniqueRecordsMap.has(key)) {
+          uniqueRecordsMap.set(key, r);
         }
       });
-      const uniqueRecords = Object.values(uniqueRecordsMap);
+      const uniqueRecords = Array.from(uniqueRecordsMap.values());
       
       const statsMap = {};
       const today = new Date(); today.setHours(0,0,0,0);
@@ -885,17 +900,16 @@
 
   async function copyText(date, dl, tabId, btn) {
     const originalText = btn.innerText; btn.innerText = "복사 중...";
-    // 🚀 v60: 공지 복사 기능에서도 최신순 정렬 한도 해제 적용
     const { data: allRecords } = await _supabase.from('exam_records').select('*').order('id', { ascending: false }).limit(10000);
     
-    const uniqueMap = {};
+    const uniqueMap = new Map();
     (allRecords || []).forEach(r => { 
       const key = r.test_date + '_' + r.student_name;
-      if (!uniqueMap[key]) {
-        uniqueMap[key] = r;
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, r);
       }
     });
-    const pendingData = Object.values(uniqueMap).filter(r => r.status === '대기중');
+    const pendingData = Array.from(uniqueMap.values()).filter(r => r.status === '대기중');
 
     const today = new Date(); today.setHours(0,0,0,0);
     const oMap = {}; const rMap = {}; const pMap = {}; const ppMap = {};
@@ -922,9 +936,9 @@
     
     let txt = tabId === 'dashTab' ? `[${date} 미통과자 명단]\n` : "";
     if(tabId === 'dashTab') {
-      if(Object.keys(rMap).length > 0) { txt += `\n-재시\n`; for (const g in rMap) txt += `${g}: ${rMap[g].join(', ')}\n`; }
-      if(Object.keys(pMap).length > 0) { txt += `\n-빡지\n`; for (const g in pMap) txt += `${g}: ${pMap[g].join(', ')}\n`; }
-      if(Object.keys(ppMap).length > 0) { txt += `\n-빡지추가 (위 명단 중 가중 페널티)\n`; for (const g in ppMap) txt += `${g}: ${ppMap[g].join(', ')}\n`; }
+      if(Object.keys(rMap).length > 0) { txt += `\n-재시\n`; Object.keys(rMap).sort().forEach(g => { txt += `${g}: ${rMap[g].sort().join(', ')}\n`; }); }
+      if(Object.keys(pMap).length > 0) { txt += `\n-빡지\n`; Object.keys(pMap).sort().forEach(g => { txt += `${g}: ${pMap[g].sort().join(', ')}\n`; }); }
+      if(Object.keys(ppMap).length > 0) { txt += `\n-빡지추가 (위 명단 중 가중 페널티)\n`; Object.keys(ppMap).sort().forEach(g => { txt += `${g}: ${ppMap[g].sort().join(', ')}\n`; }); }
       txt += `\n마감 기한 : ${dl}까지\n`;
     }
     if(Object.keys(oMap).length > 0) {

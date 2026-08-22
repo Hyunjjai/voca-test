@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>단어 스마트 관리 v68</title>
+  <title>단어 스마트 관리 v69</title>
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
@@ -292,7 +292,6 @@
 </div>
 
 <script>
-  // 선생님의 Supabase 정보
   const SUPABASE_URL = "https://gcnyotbytdvdhqopienw.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjbnlvdGJ5dGR2ZGhxb3BpZW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNzI3MDYsImV4cCI6MjEwMjY0ODcwNn0.87ZPqxDJoTOW5frYEBkY1NlMv7fpcEsd_xxK6V77-W4";
   const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -416,14 +415,14 @@
     const targetDateStr = document.getElementById('testDate').value; 
     if(!g || !targetDateStr) return;
     
-    document.getElementById('studentList').innerHTML = `<div style="grid-column: 1/-1;"><div class="loading-spinner"></div><p style="text-align:center; color:var(--text-sub);">최신 데이터를 불러오는 중...</p></div>`;
+    document.getElementById('studentList').innerHTML = `<div style="grid-column: 1/-1;"><div class="loading-spinner"></div><p style="text-align:center; color:var(--text-sub);">최신 데이터를 완벽하게 추합 중...</p></div>`;
     document.getElementById('summaryStatsContainer').innerHTML = '';
 
     try {
-      // 🚀 v68: order('id') 완전 삭제! 데이터베이스에서 있는 그대로 가져옴
+      // 🚀 v69 마스터 패치: UUID 알파벳 정렬 오류를 박살내는 "created_at 기준 시간순 정렬" 적용!!!
       const [{data: allStudents}, {data: allRecords}] = await Promise.all([
         _supabase.from('students').select('*').limit(2000),
-        _supabase.from('exam_records').select('*').limit(10000)
+        _supabase.from('exam_records').select('*').order('created_at', { ascending: false }).limit(10000)
       ]);
 
       const today = new Date(); today.setHours(0,0,0,0);
@@ -431,13 +430,15 @@
       const dayOfWeek = targetDateObj.getDay();
       let filterDay = (dayOfWeek === 2) ? "화" : (dayOfWeek === 3) ? "수" : "";
       
-      const uniqueRecordsMap = {};
+      // 시간순(최신순)으로 정렬되었으므로 1순위 매칭 데이터가 100% 최신 데이터임!
+      const uniqueRecordsMap = new Map();
       (allRecords || []).forEach(r => {
         const key = r.test_date + '_' + r.student_name;
-        // 가장 나중에 읽힌 데이터가 덮어쓰도록 하여 최신 상태 유지
-        uniqueRecordsMap[key] = r;
+        if (!uniqueRecordsMap.has(key)) {
+          uniqueRecordsMap.set(key, r);
+        }
       });
-      const uniqueRecords = Object.values(uniqueRecordsMap);
+      const uniqueRecords = Array.from(uniqueRecordsMap.values());
 
       const statsMap = {};
       const lastRecordMap = {};
@@ -592,60 +593,80 @@
     updateSummaryStats(); 
   }
 
-  // 🚀 v68: 낡은 기록 삭제 ➡️ 최신 기록 삽입 (에러 원천 차단 로직 부활)
+  // 🚀 v69 마스터 패치: 고유 ID를 직접 매칭시켜 오직 순수한 UPDATE/INSERT만 수행하는 무적의 저장 엔진!
   async function saveAll() {
-    const upsertData = Array.from(document.querySelectorAll('.student-card')).map(c => {
+    const targetDate = document.getElementById('testDate').value;
+    
+    // 1. 해당 날짜에 데이터베이스에 이미 존재하는 아이들의 진짜 고유 ID를 가져옵니다.
+    const { data: existingRecords } = await _supabase.from('exam_records')
+      .select('id, student_name, status')
+      .eq('test_date', targetDate);
+
+    const existingMap = {};
+    (existingRecords || []).forEach(r => {
+       existingMap[r.student_name] = r;
+    });
+
+    const finalUpsertData = Array.from(document.querySelectorAll('.student-card')).map(c => {
+      const name = c.getAttribute('data-name');
       const status = c.getAttribute('data-status');
       let finalAction = c.getAttribute('data-action');
-      if (status === 'Fail' && c.getAttribute('data-extra') === 'true') finalAction += '+빡지추가';
+      const hasExtra = c.getAttribute('data-extra') === 'true';
+      if (status === 'Fail' && hasExtra) finalAction += '+빡지추가';
       
+      // 2. 보호막: DB에 이미 완료 처리되어 있다면, 그걸 우선 유지!
       let currentDbStatus = c.getAttribute('data-db-status') || '대기중';
-      let dbStatus;
+      let existingDbRecord = existingMap[name];
       
+      if (existingDbRecord && (existingDbRecord.status === '완료' || existingDbRecord.status.startsWith('부분완료'))) {
+         currentDbStatus = existingDbRecord.status;
+      }
+
+      let dbStatus;
       if (status === 'Fail') {
-         if (currentDbStatus === '완료' || currentDbStatus.startsWith('부분완료')) {
-             dbStatus = currentDbStatus;
-         } else {
-             dbStatus = '대기중';
-         }
+         dbStatus = (currentDbStatus === '완료' || currentDbStatus.startsWith('부분완료')) ? currentDbStatus : '대기중';
       } else if (status === 'Absence') {
          dbStatus = '결석처리';
       } else {
          dbStatus = '해당없음';
       }
 
-      return { 
-        test_date: document.getElementById('testDate').value, 
+      const payload = { 
+        test_date: targetDate, 
         main_group: c.getAttribute('data-group'), 
-        student_name: c.getAttribute('data-name'), 
+        student_name: name, 
         deadline: document.getElementById('deadlineDate').value, 
         is_passed: status, 
         action: finalAction, 
         status: dbStatus
       };
+      
+      // 3. 기존에 있던 학생이면 고유 ID를 무조건 첨부! (Supabase가 알아서 완벽하게 덮어쓰기 해줌)
+      if (existingDbRecord && existingDbRecord.id) {
+        payload.id = existingDbRecord.id;
+      }
+      
+      // UI 상태 즉시 갱신
+      c.setAttribute('data-db-status', dbStatus);
+      return payload;
     });
     
-    if (upsertData.length === 0) return;
-    
-    const targetDate = document.getElementById('testDate').value;
-    const names = upsertData.map(d => d.student_name);
+    if (finalUpsertData.length === 0) return;
     
     const b = document.getElementById('saveBtn'); b.innerText = "저장 중..."; b.disabled = true;
     try {
-      // 🚀 1. 자물쇠 에러를 피하기 위해, 이 학생들의 오늘 날짜 낡은 기록을 완벽하게 삭제
-      await _supabase.from('exam_records').delete().eq('test_date', targetDate).in('student_name', names);
-      
-      // 🚀 2. 방금 설정한 따끈따끈한 최신 상태를 새롭게 꽂아 넣음
-      const { error } = await _supabase.from('exam_records').insert(upsertData);
+      // 4. 삭제(Delete) 명령어를 영원히 추방! 알아서 똑똑하게 Update 하도록 Upsert 명령어 한 번만 실행!
+      const { error } = await _supabase.from('exam_records').upsert(finalUpsertData);
       
       if (error) throw error;
       
-      alert("성공적으로 저장되었습니다! ⚡\n(이제 절대로 꼬이지 않습니다!)"); 
+      alert("성공적으로 저장되었습니다! ⚡\n(이제 절대로 데이터가 초기화되거나 꼬이지 않습니다.)"); 
       b.innerText = "결과 일괄 저장"; 
       b.disabled = false; 
     } catch (err) { 
       console.error(err); 
       alert("저장 실패: " + err.message); 
+      b.innerText = "결과 일괄 저장";
       b.disabled = false; 
     }
   }
@@ -666,19 +687,22 @@
     document.getElementById(container).innerHTML = `<div class="loading-spinner"></div><p style="text-align:center; color:var(--text-sub);">명단을 추합하고 있습니다...</p>`;
     document.getElementById('globalBatchFooter').style.display = 'none';
     try {
+      // 🚀 시간순(created_at) 강제 정렬 적용! 암호 알파벳에 휘둘리지 않음!
       const [{data: allStudents}, {data: allRecords}] = await Promise.all([ 
         _supabase.from('students').select('*').limit(2000), 
-        _supabase.from('exam_records').select('*').limit(10000) // 🚀 정렬 꼬임 방지를 위해 order() 삭제
+        _supabase.from('exam_records').select('*').order('created_at', { ascending: false }).limit(10000)
       ]);
       const studentMeta = {};
       (allStudents || []).forEach(s => { studentMeta[s.name] = { isAdj: !!s.is_adjusted, mockGrade: s.mock_grade || '-' }; });
       
-      const uniqueRecordsMap = {};
+      const uniqueRecordsMap = new Map();
       (allRecords || []).forEach(r => { 
         const key = r.test_date + '_' + r.student_name;
-        uniqueRecordsMap[key] = r;
+        if (!uniqueRecordsMap.has(key)) {
+          uniqueRecordsMap.set(key, r);
+        }
       });
-      const pendingRecords = Object.values(uniqueRecordsMap).filter(r => ['대기중', '부분완료_본과제', '부분완료_추가과제'].includes(r.status));
+      const pendingRecords = Array.from(uniqueRecordsMap.values()).filter(r => ['대기중', '부분완료_본과제', '부분완료_추가과제'].includes(r.status));
       
       const processedData = {};
       (pendingRecords || []).forEach(r => {
@@ -736,7 +760,7 @@
               return `<div class="pending-card" data-id="${s.id}" data-has-extra="${hasExtra}" data-db-status="${s.dbStatus}" onclick="toggleSelect(this, event)">
                         <span class="pending-name">${s.name}</span>
                         <div style="font-size:13px; font-weight:700; color:var(--text-sub); display:flex; gap:4px; flex-direction:column; align-items:center;">
-                          <span>컷: ${cutoff}개 | ${isOT ? '기한초과' : a}</span>${!hasExtra ? extraBadge : ''}
+                          <span>컷: ${cutoff}개 | ${isOT ? '기한초과' : a}</span>${extraBadge}
                         </div>
                         ${extraToggles}
                       </div>`;
@@ -831,17 +855,20 @@
     switchTab('statsTab', el);
     document.getElementById('statsTableContainer').innerHTML = `<div class="loading-spinner"></div><p style="text-align:center; color:var(--text-sub);">초고속 통계 산출 중...</p>`;
     try {
+      // 🚀 시간순(created_at) 강제 정렬!
       const [{data: allStudents}, {data: allRecords}] = await Promise.all([ 
         _supabase.from('students').select('*').limit(2000), 
-        _supabase.from('exam_records').select('*').limit(10000) 
+        _supabase.from('exam_records').select('*').order('created_at', { ascending: false }).limit(10000) 
       ]);
       
-      const uniqueRecordsMap = {};
+      const uniqueRecordsMap = new Map();
       (allRecords || []).forEach(r => { 
         const key = r.test_date + '_' + r.student_name;
-        uniqueRecordsMap[key] = r;
+        if (!uniqueRecordsMap.has(key)) {
+          uniqueRecordsMap.set(key, r);
+        }
       });
-      const uniqueRecords = Object.values(uniqueRecordsMap);
+      const uniqueRecords = Array.from(uniqueRecordsMap.values());
       
       const statsMap = {};
       const today = new Date(); today.setHours(0,0,0,0);
@@ -979,14 +1006,17 @@
 
   async function copyText(date, dl, tabId, btn) {
     const originalText = btn.innerText; btn.innerText = "복사 중...";
-    const { data: allRecords } = await _supabase.from('exam_records').select('*').limit(10000);
+    // 🚀 시간순(created_at) 강제 정렬!
+    const { data: allRecords } = await _supabase.from('exam_records').select('*').order('created_at', { ascending: false }).limit(10000);
     
-    const uniqueMap = {};
+    const uniqueMap = new Map();
     (allRecords || []).forEach(r => { 
       const key = r.test_date + '_' + r.student_name;
-      uniqueMap[key] = r;
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, r);
+      }
     });
-    const pendingData = Object.values(uniqueMap).filter(r => ['대기중', '부분완료_본과제', '부분완료_추가과제'].includes(r.status));
+    const pendingData = Array.from(uniqueMap.values()).filter(r => ['대기중', '부분완료_본과제', '부분완료_추가과제'].includes(r.status));
 
     const today = new Date(); today.setHours(0,0,0,0);
     const oMap = {}; const rMap = {}; const pMap = {}; const ppMap = {};

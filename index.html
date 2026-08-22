@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>단어 스마트 관리 v65</title>
+  <title>단어 스마트 관리 v66</title>
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
@@ -424,6 +424,15 @@
       const dayOfWeek = targetDateObj.getDay();
       let filterDay = (dayOfWeek === 2) ? "화" : (dayOfWeek === 3) ? "수" : "";
       
+      // 학생 명부 중복 찌꺼기 완벽 차단
+      const uniqueStudentsMap = {};
+      (allStudents || []).forEach(s => {
+        if (!uniqueStudentsMap[s.name]) {
+          uniqueStudentsMap[s.name] = s;
+        }
+      });
+      const deduplicatedStudents = Object.values(uniqueStudentsMap);
+
       const uniqueRecordsMap = new Map();
       (allRecords || []).forEach(r => {
         const key = r.test_date + '_' + r.student_name;
@@ -461,7 +470,7 @@
       const isWeekdayMode = ["1-8", "1-9", "1-10"].includes(g);
       const filteredStudents = [];
 
-      (allStudents || []).forEach(student => {
+      deduplicatedStudents.forEach(student => {
         let match = false;
         if (isWeekdayMode) {
           let sheetClass = student.weekday_group ? student.weekday_group.trim() : "";
@@ -586,9 +595,11 @@
     updateSummaryStats(); 
   }
 
-  // 🚀 v65: 데이터베이스의 unique_test_record 제약조건을 완벽하게 활용하는 단일 Upsert!
+  // 🚀 v66: Delete & Insert 로직으로 완전히 교체하여 조용한 실패(Silent Failure) 100% 차단!
   async function saveAll() {
-    const upsertData = Array.from(document.querySelectorAll('.student-card')).map(c => {
+    const payloadMap = {};
+    
+    Array.from(document.querySelectorAll('.student-card')).forEach(c => {
       const status = c.getAttribute('data-status');
       let finalAction = c.getAttribute('data-action');
       if (status === 'Fail' && c.getAttribute('data-extra') === 'true') finalAction += '+빡지추가';
@@ -604,7 +615,8 @@
          dbStatus = '해당없음';
       }
 
-      return { 
+      // 같은 이름의 중복 카드가 있어도 1개만 남도록 최적화
+      payloadMap[c.getAttribute('data-name')] = { 
         test_date: document.getElementById('testDate').value, 
         main_group: c.getAttribute('data-group'), 
         student_name: c.getAttribute('data-name'), 
@@ -615,31 +627,43 @@
       };
     });
     
-    if (upsertData.length === 0) return;
+    const finalUpsertData = Object.values(payloadMap);
+    if (finalUpsertData.length === 0) return;
+    
+    const targetDate = document.getElementById('testDate').value;
+    const names = finalUpsertData.map(d => d.student_name);
     
     const b = document.getElementById('saveBtn'); b.innerText = "저장 중..."; b.disabled = true;
     try {
-      const { error } = await _supabase.from('exam_records').upsert(upsertData, { 
-        onConflict: 'test_date,student_name' 
-      });
+      // 1. 해당 날짜에 있는 이 학생들의 낡은 기록(또는 오류 찌꺼기)을 완벽하게 청소
+      const { error: delErr } = await _supabase.from('exam_records')
+        .delete()
+        .eq('test_date', targetDate)
+        .in('student_name', names);
+        
+      if (delErr) throw delErr;
       
-      if (error) {
-        if (error.message.includes('unique_test_record')) {
-           const { error: err2 } = await _supabase.from('exam_records').upsert(upsertData, { 
-             onConflict: 'unique_test_record' 
-           });
-           if (err2) throw err2;
-        } else {
-           throw error;
+      // 2. 방금 체크한 완벽한 새 기록만 새롭게 삽입
+      const { error: insErr } = await _supabase.from('exam_records')
+        .insert(finalUpsertData);
+        
+      if (insErr) throw insErr;
+      
+      // 3. 화면을 재로딩하지 않고도, 내부 상태만 최신으로 살짝 갱신 (완료 보호막 유지용)
+      Array.from(document.querySelectorAll('.student-card')).forEach(c => {
+        const name = c.getAttribute('data-name');
+        if (payloadMap[name]) {
+           c.setAttribute('data-db-status', payloadMap[name].status);
         }
-      }
-      
-      alert("성공적으로 저장되었습니다! ⚡\n(이제 입력 내용이 안전하게 유지됩니다.)"); 
+      });
+
+      alert("성공적으로 저장되었습니다! ⚡"); 
       b.innerText = "결과 일괄 저장"; 
       b.disabled = false; 
     } catch (err) { 
       console.error(err); 
       alert("저장 실패: " + err.message); 
+      b.innerText = "결과 일괄 저장";
       b.disabled = false; 
     }
   }

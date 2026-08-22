@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>단어 스마트 관리 v61</title>
+  <title>단어 스마트 관리 v62</title>
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
@@ -11,7 +11,7 @@
     *, *::before, *::after { box-sizing: border-box !important; }
     html, body { overflow-x: hidden; width: 100%; margin: 0; padding: 0; background-color: var(--bg-body);}
     
-    /* 오리지널 컬러 팔레트 유지 */
+    /* 오리지널 컬러 팔레트 */
     :root {
       --bg-body: #F4F5F8; --bg-container: #FFFFFF; --text-main: #1F2937; --text-sub: #6B7280;
       --border-color: #E5E7EB; --primary: #4F46E5; --primary-hover: #4338CA; --tab-bg: #F3F4F6;
@@ -291,6 +291,7 @@
 </div>
 
 <script>
+  // 선생님의 Supabase 정보
   const SUPABASE_URL = "https://gcnyotbytdvdhqopienw.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjbnlvdGJ5dGR2ZGhxb3BpZW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNzI3MDYsImV4cCI6MjEwMjY0ODcwNn0.87ZPqxDJoTOW5frYEBkY1NlMv7fpcEsd_xxK6V77-W4";
   const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -418,7 +419,6 @@
     document.getElementById('summaryStatsContainer').innerHTML = '';
 
     try {
-      // 🚀 v61: 무조건 최신 데이터를 먼저 뽑아오는 맵(Map) 자료구조 적용
       const [{data: allStudents}, {data: allRecords}] = await Promise.all([
         _supabase.from('students').select('*').limit(2000),
         _supabase.from('exam_records').select('*').order('id', { ascending: false }).limit(10000)
@@ -492,17 +492,19 @@
           
           let currentStatus = 'Pass';
           let currentAction = '재시';
-          let currentDbStatus = '해당없음'; // 🚀 보호막 변수
+          let currentDbStatus = '해당없음'; 
+          let currentRecordId = ''; 
           
           const todayRecord = uniqueRecords.find(r => r.test_date === targetDateStr && r.student_name === name);
           if (todayRecord) {
             currentStatus = todayRecord.is_passed;
             currentAction = todayRecord.action;
-            currentDbStatus = todayRecord.status; // 🚀 완료 처리된 상태 기억
+            currentDbStatus = todayRecord.status;
+            currentRecordId = todayRecord.id; // 🚀 고유 ID 기억!
           }
 
           filteredStudents.push({ 
-            name: name, group: student.main_group, isPassed: currentStatus, action: currentAction, dbStatus: currentDbStatus,
+            name: name, group: student.main_group, isPassed: currentStatus, action: currentAction, dbStatus: currentDbStatus, recordId: currentRecordId,
             isAdjusted: !!student.is_adjusted, mockGrade: student.mock_grade || '-',
             totalFails: statsMap[name] ? statsMap[name].fail : 0, failedLastTime: failedLastTime
           });
@@ -546,9 +548,9 @@
       
       const idSafe = s.name.replace(/\s/g, ''); 
       
-      // 🚀 data-db-status를 HTML 안에 심어두어 저장 시 참조
+      // 🚀 data-record-id를 심어서 저장 시 Update(수정)가 되도록 함
       return `
-      <div class="student-card ${cardClass}" id="card-${idSafe}" data-name="${s.name}" data-group="${s.group}" data-status="${s.isPassed}" data-action="${baseAction}" data-extra="${hasExtra}" data-db-status="${s.dbStatus}">
+      <div class="student-card ${cardClass}" id="card-${idSafe}" data-name="${s.name}" data-group="${s.group}" data-status="${s.isPassed}" data-action="${baseAction}" data-extra="${hasExtra}" data-db-status="${s.dbStatus}" data-record-id="${s.recordId}">
         ${badges}
         <div class="card-header">
           <div class="name" onclick="setPass('${idSafe}')">${s.name}</div>
@@ -592,19 +594,18 @@
     updateSummaryStats(); 
   }
 
-  // 🚀 v61: 상태 보호막 기능 추가 (이미 '완료' 처리된 기록 보호)
+  // 🚀 v62: 지우지 않고 고유 ID로 덮어쓰기 (Update) 하여 완료 처리 보호 및 초기화 방지
   async function saveAll() {
     const upsertData = Array.from(document.querySelectorAll('.student-card')).map(c => {
       const status = c.getAttribute('data-status');
       let finalAction = c.getAttribute('data-action');
       if (status === 'Fail' && c.getAttribute('data-extra') === 'true') finalAction += '+빡지추가';
       
-      // 🚀 데이터베이스에 저장되어 있던 기존 상태 불러오기
       let currentDbStatus = c.getAttribute('data-db-status') || '대기중';
       let dbStatus;
       
       if (status === 'Fail') {
-         // 빨간 카드(미통과)인데, 예전에 미통과 탭에서 '완료'를 눌렀던 아이라면 '완료' 상태 그대로 유지! (보호막)
+         // 🚀 미통과 탭에서 '완료' 처리한 아이는 다시 저장해도 '완료'로 유지!
          dbStatus = (currentDbStatus === '완료') ? '완료' : '대기중';
       } else if (status === 'Absence') {
          dbStatus = '결석처리';
@@ -612,7 +613,7 @@
          dbStatus = '해당없음';
       }
 
-      return { 
+      const payload = { 
         test_date: document.getElementById('testDate').value, 
         main_group: c.getAttribute('data-group'), 
         student_name: c.getAttribute('data-name'), 
@@ -621,22 +622,38 @@
         action: finalAction, 
         status: dbStatus
       };
+      
+      // 🚀 고유 ID가 있으면 삽입(Insert) 대신 수정(Update)을 하도록 ID 추가
+      const recordId = c.getAttribute('data-record-id');
+      if (recordId && recordId !== 'undefined' && recordId !== '') {
+        payload.id = parseInt(recordId, 10);
+      }
+      
+      return payload;
     });
     
     if (upsertData.length === 0) return;
     
-    const targetDate = document.getElementById('testDate').value;
-    const names = upsertData.map(d => d.student_name);
-    
     const b = document.getElementById('saveBtn'); b.innerText = "저장 중..."; b.disabled = true;
     try {
-      // 해당 날짜의 오래된 중복 찌꺼기 기록을 모두 깨끗하게 청소
-      await _supabase.from('exam_records').delete().eq('test_date', targetDate).in('student_name', names);
-      // 보호막이 적용된 최신 데이터 1줄씩만 삽입
-      const { error } = await _supabase.from('exam_records').insert(upsertData);
+      // 삭제 없이 안전하게 Upsert(업데이트 또는 삽입) 진행 후 결과 받기
+      const { data, error } = await _supabase.from('exam_records').upsert(upsertData).select();
       
       if (error) throw error;
-      alert("성공적으로 저장되었습니다! ⚡\n(이제 입력 내용이 초기화되지 않고 안전하게 유지됩니다.)"); 
+      
+      // 🚀 방금 저장된 따끈따끈한 ID를 화면 카드에 즉시 주입 (다른 반 갔다 오지 않아도 됨)
+      if (data) {
+        data.forEach(row => {
+          const idSafe = row.student_name.replace(/\s/g, '');
+          const card = document.getElementById('card-' + idSafe);
+          if (card) {
+            card.setAttribute('data-record-id', row.id);
+            card.setAttribute('data-db-status', row.status);
+          }
+        });
+      }
+      
+      alert("성공적으로 저장되었습니다! ⚡\n(이제 입력 내용이 절대로 초기화되지 않습니다.)"); 
       b.innerText = "결과 일괄 저장"; 
       b.disabled = false; 
     } catch (err) { console.error(err); alert("저장 실패"); b.disabled = false; }
@@ -655,7 +672,6 @@
       const studentMeta = {};
       (allStudents || []).forEach(s => { studentMeta[s.name] = { isAdj: !!s.is_adjusted, mockGrade: s.mock_grade || '-' }; });
       
-      // 🚀 v61: 미통과 탭에서도 맵(Map)을 사용해 가장 최신 기록만 필터링
       const uniqueRecordsMap = new Map();
       (allRecords || []).forEach(r => { 
         const key = r.test_date + '_' + r.student_name;
@@ -663,6 +679,7 @@
           uniqueRecordsMap.set(key, r);
         }
       });
+      // 완료 처리되지 않은 대기중 명단만 불러옴
       const pendingRecords = Array.from(uniqueRecordsMap.values()).filter(r => r.status === '대기중');
       
       const processedData = {};
@@ -699,7 +716,6 @@
         if (grouped[a] && Object.keys(grouped[a]).length > 0) {
           html += `<div style="font-weight:800; font-size:18px; margin:15px 0 8px;">- ${a}</div>`;
           
-          // 🚀 v61: 반 이름 기준 알파벳 순 정렬, 학생 이름 기준 가나다 순 정렬
           const sortedGroups = Object.keys(grouped[a]).sort();
           for (const g of sortedGroups) { 
             html += `<div style="font-size:15px; font-weight:700; color:var(--text-sub); margin-bottom:8px;">${g}</div><div class="pending-grid">`;

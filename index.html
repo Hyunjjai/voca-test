@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>단어 스마트 관리 v63</title>
+  <title>단어 스마트 관리 v64</title>
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
@@ -34,7 +34,6 @@
     body { font-family: 'Pretendard', sans-serif; color: var(--text-main); padding: 0 10px 100px 10px; transition: 0.3s; }
     .container { width: 100%; max-width: 1200px; margin: 0 auto; background: var(--bg-container); padding: 0 25px; border-radius: 24px; box-shadow: var(--shadow-lg); transition: 0.3s; min-height: 100vh;}
     
-    /* 상단 고정 영역 */
     .header { position: sticky; top: 0; z-index: 105; background: var(--bg-container); padding: 20px 0 10px 0; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0; }
     .header h2 { margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
     .theme-toggle { background: var(--input-bg); border: 1px solid var(--border-color); color: var(--text-sub); border-radius: 50%; width: 44px; height: 44px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
@@ -43,7 +42,6 @@
     .sticky-controls { position: sticky; top: 74px; z-index: 100; background: var(--bg-container); padding-bottom: 12px; border-bottom: 1px solid var(--border-color); margin-bottom: 15px; }
     .sticky-controls.flex-row { display: flex; gap: 8px; align-items: center; }
     
-    /* 하단 내비게이션 바 */
     .tabs { 
       position: fixed; bottom: 0; left: 0; width: 100%;
       background: rgba(255, 255, 255, 0.85); 
@@ -60,7 +58,6 @@
     .tab-content.active { display: block; animation: fadeIn 0.2s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     
-    /* 입력 패널 */
     .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
     .input-row label { font-size: 14px; font-weight: 700; color: var(--text-sub); margin-bottom: 6px; display: block; margin-left: 4px; }
     .input-row input, .input-row select { width: 100%; padding: 14px 16px; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 12px; font-size: 15px; appearance: none; -webkit-appearance: none; outline: none; transition: border 0.2s; box-sizing: border-box; height: 48px; }
@@ -82,7 +79,6 @@
     #statRetest { color: var(--fail-text); }
     #statPenalty { color: var(--danger); }
 
-    /* 명단 및 카드 UI */
     #studentList { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; width: 100%; padding-bottom: 20px;}
     .student-card { background: var(--bg-container); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px 12px; text-align: center; transition: 0.2s; display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; box-shadow: var(--shadow-sm); }
     .student-card.pass { background: var(--pass-bg); border-color: var(--pass-border); }
@@ -135,7 +131,6 @@
     .modal-content input[type="text"]:focus { border-color: var(--primary); }
     .modal-content .check-row { display:flex; align-items:center; gap:10px; margin-top:5px; cursor:pointer;}
     
-    /* 모바일 최적화 */
     @media (max-width: 768px) {
       body { padding: 0 5px 85px 5px; background-color: var(--bg-body); }
       .container { padding: 0 10px; border-radius: 16px; box-shadow: none; background: transparent; min-height: calc(100vh - 85px); }
@@ -593,7 +588,7 @@
     updateSummaryStats(); 
   }
 
-  // 🚀 v63: 명단 누락자(신규 추가 학생) 오류를 완벽하게 차단하는 2-Track 저장 시스템!
+  // 🚀 v64: parseInt() 제거! UUID 훼손 원천 차단
   async function saveAll() {
     const upsertData = Array.from(document.querySelectorAll('.student-card')).map(c => {
       const status = c.getAttribute('data-status');
@@ -623,7 +618,8 @@
       
       const recordId = c.getAttribute('data-record-id');
       if (recordId && recordId !== 'undefined' && recordId !== 'null' && recordId !== '') {
-        payload.id = parseInt(recordId, 10);
+        // 🚀 parseInt 제거. UUID 영문+숫자를 있는 그대로 전달합니다.
+        payload.id = recordId; 
       }
       
       return payload;
@@ -633,11 +629,9 @@
     
     const b = document.getElementById('saveBtn'); b.innerText = "저장 중..."; b.disabled = true;
     try {
-      // 🚀 1. 기존 학생(ID 있음)과 신규 학생(ID 없음) 분리!
       const toUpdate = upsertData.filter(d => d.id !== undefined);
       const toInsert = upsertData.filter(d => d.id === undefined);
       
-      // 🚀 2. 각각 맞는 방법으로 데이터베이스에 전송 (에러 원천 차단)
       if (toUpdate.length > 0) {
         const { error } = await _supabase.from('exam_records').upsert(toUpdate, { onConflict: 'id' });
         if (error) throw error;
@@ -648,7 +642,6 @@
         if (error) throw error;
       }
       
-      // 🚀 3. 새로 생성된 ID를 화면에 즉각 연동시켜 재저장 시 오류 방지
       const targetDate = document.getElementById('testDate').value;
       const names = upsertData.map(d => d.student_name);
       

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>단어 스마트 관리 v64</title>
+  <title>단어 스마트 관리 v65</title>
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
@@ -488,18 +488,16 @@
           let currentStatus = 'Pass';
           let currentAction = '재시';
           let currentDbStatus = '해당없음'; 
-          let currentRecordId = ''; 
           
           const todayRecord = uniqueRecords.find(r => r.test_date === targetDateStr && r.student_name === name);
           if (todayRecord) {
             currentStatus = todayRecord.is_passed;
             currentAction = todayRecord.action;
             currentDbStatus = todayRecord.status;
-            currentRecordId = todayRecord.id; 
           }
 
           filteredStudents.push({ 
-            name: name, group: student.main_group, isPassed: currentStatus, action: currentAction, dbStatus: currentDbStatus, recordId: currentRecordId,
+            name: name, group: student.main_group, isPassed: currentStatus, action: currentAction, dbStatus: currentDbStatus,
             isAdjusted: !!student.is_adjusted, mockGrade: student.mock_grade || '-',
             totalFails: statsMap[name] ? statsMap[name].fail : 0, failedLastTime: failedLastTime
           });
@@ -544,7 +542,7 @@
       const idSafe = s.name.replace(/\s/g, ''); 
       
       return `
-      <div class="student-card ${cardClass}" id="card-${idSafe}" data-name="${s.name}" data-group="${s.group}" data-status="${s.isPassed}" data-action="${baseAction}" data-extra="${hasExtra}" data-db-status="${s.dbStatus}" data-record-id="${s.recordId}">
+      <div class="student-card ${cardClass}" id="card-${idSafe}" data-name="${s.name}" data-group="${s.group}" data-status="${s.isPassed}" data-action="${baseAction}" data-extra="${hasExtra}" data-db-status="${s.dbStatus}">
         ${badges}
         <div class="card-header">
           <div class="name" onclick="setPass('${idSafe}')">${s.name}</div>
@@ -588,7 +586,7 @@
     updateSummaryStats(); 
   }
 
-  // 🚀 v64: parseInt() 제거! UUID 훼손 원천 차단
+  // 🚀 v65: 데이터베이스의 unique_test_record 제약조건을 완벽하게 활용하는 단일 Upsert!
   async function saveAll() {
     const upsertData = Array.from(document.querySelectorAll('.student-card')).map(c => {
       const status = c.getAttribute('data-status');
@@ -606,7 +604,7 @@
          dbStatus = '해당없음';
       }
 
-      const payload = { 
+      return { 
         test_date: document.getElementById('testDate').value, 
         main_group: c.getAttribute('data-group'), 
         student_name: c.getAttribute('data-name'), 
@@ -615,56 +613,25 @@
         action: finalAction, 
         status: dbStatus
       };
-      
-      const recordId = c.getAttribute('data-record-id');
-      if (recordId && recordId !== 'undefined' && recordId !== 'null' && recordId !== '') {
-        // 🚀 parseInt 제거. UUID 영문+숫자를 있는 그대로 전달합니다.
-        payload.id = recordId; 
-      }
-      
-      return payload;
     });
     
     if (upsertData.length === 0) return;
     
     const b = document.getElementById('saveBtn'); b.innerText = "저장 중..."; b.disabled = true;
     try {
-      const toUpdate = upsertData.filter(d => d.id !== undefined);
-      const toInsert = upsertData.filter(d => d.id === undefined);
+      const { error } = await _supabase.from('exam_records').upsert(upsertData, { 
+        onConflict: 'test_date,student_name' 
+      });
       
-      if (toUpdate.length > 0) {
-        const { error } = await _supabase.from('exam_records').upsert(toUpdate, { onConflict: 'id' });
-        if (error) throw error;
-      }
-      
-      if (toInsert.length > 0) {
-        const { error } = await _supabase.from('exam_records').insert(toInsert);
-        if (error) throw error;
-      }
-      
-      const targetDate = document.getElementById('testDate').value;
-      const names = upsertData.map(d => d.student_name);
-      
-      const { data: refreshedData } = await _supabase.from('exam_records')
-        .select('id, student_name, status')
-        .eq('test_date', targetDate)
-        .in('student_name', names)
-        .order('id', { ascending: false });
-        
-      if (refreshedData) {
-        const uniqueRefreshed = {};
-        refreshedData.forEach(r => {
-          if(!uniqueRefreshed[r.student_name]) uniqueRefreshed[r.student_name] = r;
-        });
-        
-        Object.values(uniqueRefreshed).forEach(row => {
-          const idSafe = row.student_name.replace(/\s/g, '');
-          const card = document.getElementById('card-' + idSafe);
-          if (card) {
-            card.setAttribute('data-record-id', row.id);
-            card.setAttribute('data-db-status', row.status);
-          }
-        });
+      if (error) {
+        if (error.message.includes('unique_test_record')) {
+           const { error: err2 } = await _supabase.from('exam_records').upsert(upsertData, { 
+             onConflict: 'unique_test_record' 
+           });
+           if (err2) throw err2;
+        } else {
+           throw error;
+        }
       }
       
       alert("성공적으로 저장되었습니다! ⚡\n(이제 입력 내용이 안전하게 유지됩니다.)"); 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>단어 스마트 관리 v57</title>
+  <title>단어 스마트 관리 v58</title>
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
@@ -123,8 +123,9 @@
     .pending-card .pending-name { font-size: 32px; font-weight: 900; letter-spacing: -1px; }
     .overdue-badge { font-size: 12px; padding: 3px 8px; border-radius: 8px; font-weight: 800; display: inline-block; white-space: nowrap; }
     
-    .batch-footer { position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%); width: calc(100% - 30px); max-width: 600px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); padding: 16px; display: none; z-index: 999; border-radius: 20px; box-shadow: var(--shadow-lg); border: 1px solid var(--border-color); }
-    [data-theme="dark"] .batch-footer { background: rgba(31, 41, 55, 0.95); box-shadow: 0 -4px 20px rgba(0,0,0,0.4); }
+    /* 🚀 v58: 명단을 가리지 않도록 고정 해제하여 문서 흐름에 맞게 하단에 배치 */
+    .batch-footer { margin: 20px auto 10px auto; width: 100%; max-width: 600px; background: var(--bg-container); padding: 16px; display: none; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); }
+    [data-theme="dark"] .batch-footer { background: var(--bg-container); }
     .btn-copy-small { display: block; width: 100%; padding: 14px; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 14px; font-weight: 800; font-size: 16px; cursor: pointer; margin-top: 10px; text-align: center;}
     .loading-spinner { border: 4px solid rgba(0, 0, 0, 0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--primary); animation: spin 1s linear infinite; margin: 20px auto; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -175,7 +176,9 @@
       .tab { font-size: 13px; padding: 12px 0; }
       .stats-table th, .stats-table td { padding: 10px 4px; font-size: 12px; }
       .accordion-header { font-size: 15px; padding: 14px 16px; border-radius: 14px; }
-      .batch-footer { bottom: 75px; padding: 12px; width: calc(100% - 20px); border-radius: 16px; }
+      
+      /* 🚀 v58: 모바일에서도 둥둥 떠있지 않고 자연스럽게 밑에 자리잡도록 설정 */
+      .batch-footer { padding: 14px; width: 100%; border-radius: 16px; margin-top: 15px; }
       .btn-save { padding: 16px; font-size: 18px; border-radius: 14px; margin-top: 10px;}
     }
     
@@ -188,7 +191,6 @@
 </head>
 <body>
 <div class="container">
-  <!-- 상단 고정: 메인 타이틀 -->
   <div class="header">
     <h2>단어 스마트 관리</h2>
     <button class="theme-toggle" onclick="toggleTheme()" id="themeIcon"></button>
@@ -245,6 +247,7 @@
     <div id="manageTableContainer" style="overflow-x:auto;"></div>
   </div>
 
+  <!-- 🚀 v58: 명단 스크롤 맨 끝에 자연스럽게 이어지는 일괄 처리 풋터 -->
   <div class="batch-footer" id="globalBatchFooter">
     <div style="display:flex; flex-direction:column; gap:8px;">
       <div style="display:flex; gap:8px;">
@@ -278,7 +281,6 @@
     <label>평일 시험요일 (예: 화, 수, 화수)</label>
     <input type="text" id="editWeekdayDay" placeholder="비워두셔도 됩니다">
     
-    <!-- 🚀 평일 시험반 예시 문구 변경 -->
     <label>평일 시험반 (예: 1-8, 1-10)</label>
     <input type="text" id="editWeekdayGroup" placeholder="비워두셔도 됩니다">
     
@@ -346,9 +348,9 @@
     
     let html = '<option value="">선택</option>';
     if (isVacation || isHoliday || (day !== 2 && day !== 3)) {
-      html += '<option value="청운">청운</option><option value="백운A">백운A</option><option value="백운B">백운B</option><option value="백운C">백운C</option><option value="백운B,C 조정">백운B,C 조정대상자 반</option>';
+      // 🚀 v58: 전체 조정대상자 반 옵션 통합 (청운, 백운A, B, C 포함)
+      html += '<option value="청운">청운</option><option value="백운A">백운A</option><option value="백운B">백운B</option><option value="백운C">백운C</option><option value="조정대상자">전체 조정대상자 반</option>';
     } else {
-      // 🚀 드롭다운 옵션을 1-8, 1-9, 1-10으로 변경
       html += '<option value="1-8">1-8반</option><option value="1-9">1-9반</option><option value="1-10">1-10반</option>';
     }
     sel.innerHTML = html;
@@ -462,7 +464,6 @@
         }
       });
 
-      // 🚀 평일반 필터링 조건을 1-8, 1-9, 1-10으로 변경
       const isWeekdayMode = ["1-8", "1-9", "1-10"].includes(g);
       const filteredStudents = [];
 
@@ -475,9 +476,13 @@
         } else {
           let sheetGroup = student.main_group ? student.main_group.trim() : "";
           let isAdj = !!student.is_adjusted;
-          if (g === "백운B,C 조정") {
-            if ((sheetGroup === "백운B" || sheetGroup === "백운C") && isAdj) match = true;
-          } else if (g === "백운B" || g === "백운C") {
+          const mainGroups = ["청운", "백운A", "백운B", "백운C"];
+          
+          // 🚀 v58: 모든 그룹의 조정대상자를 '조정대상자 반'으로 완벽 분리
+          if (g === "조정대상자") {
+            if (isAdj && mainGroups.includes(sheetGroup)) match = true;
+          } else if (mainGroups.includes(g)) {
+            // 해당 반을 선택했을 때는 '조정대상자가 아닌 일반 학생'만 표시
             if (sheetGroup === g && !isAdj) match = true;
           } else {
             if (sheetGroup === g) match = true;
@@ -584,6 +589,7 @@
     updateSummaryStats(); 
   }
 
+  // 🚀 v58: 저장 후 화면 초기화 방지 (loadStudents 호출 제거)
   async function saveAll() {
     const upsertData = Array.from(document.querySelectorAll('.student-card')).map(c => {
       const status = c.getAttribute('data-status');
@@ -601,7 +607,10 @@
     try {
       const { error } = await _supabase.from('exam_records').upsert(upsertData, { onConflict: 'test_date, student_name' });
       if (error) throw error;
-      alert("성공적으로 저장되었습니다! ⚡"); b.innerText = "결과 일괄 저장"; b.disabled = false; loadStudents();
+      alert("성공적으로 저장되었습니다! ⚡"); 
+      b.innerText = "결과 일괄 저장"; 
+      b.disabled = false; 
+      // loadStudents(); <-- 화면이 재로딩되어 초기화되는 것을 막기 위해 삭제. 이제 상태 유지됨!
     } catch (err) { console.error(err); alert("저장 실패"); b.disabled = false; }
   }
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>단어 스마트 관리 v58</title>
+  <title>단어 스마트 관리 v59</title>
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
@@ -11,7 +11,7 @@
     *, *::before, *::after { box-sizing: border-box !important; }
     html, body { overflow-x: hidden; width: 100%; margin: 0; padding: 0; background-color: var(--bg-body);}
     
-    /* 🚀 오리지널 컬러 팔레트 */
+    /* 오리지널 컬러 팔레트 */
     :root {
       --bg-body: #F4F5F8; --bg-container: #FFFFFF; --text-main: #1F2937; --text-sub: #6B7280;
       --border-color: #E5E7EB; --primary: #4F46E5; --primary-hover: #4338CA; --tab-bg: #F3F4F6;
@@ -123,7 +123,6 @@
     .pending-card .pending-name { font-size: 32px; font-weight: 900; letter-spacing: -1px; }
     .overdue-badge { font-size: 12px; padding: 3px 8px; border-radius: 8px; font-weight: 800; display: inline-block; white-space: nowrap; }
     
-    /* 🚀 v58: 명단을 가리지 않도록 고정 해제하여 문서 흐름에 맞게 하단에 배치 */
     .batch-footer { margin: 20px auto 10px auto; width: 100%; max-width: 600px; background: var(--bg-container); padding: 16px; display: none; border-radius: 16px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); }
     [data-theme="dark"] .batch-footer { background: var(--bg-container); }
     .btn-copy-small { display: block; width: 100%; padding: 14px; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color); border-radius: 14px; font-weight: 800; font-size: 16px; cursor: pointer; margin-top: 10px; text-align: center;}
@@ -177,7 +176,6 @@
       .stats-table th, .stats-table td { padding: 10px 4px; font-size: 12px; }
       .accordion-header { font-size: 15px; padding: 14px 16px; border-radius: 14px; }
       
-      /* 🚀 v58: 모바일에서도 둥둥 떠있지 않고 자연스럽게 밑에 자리잡도록 설정 */
       .batch-footer { padding: 14px; width: 100%; border-radius: 16px; margin-top: 15px; }
       .btn-save { padding: 16px; font-size: 18px; border-radius: 14px; margin-top: 10px;}
     }
@@ -197,7 +195,6 @@
   </div>
   
   <div id="inputTab" class="tab-content active">
-    <!-- 상단 고정: 2줄 입력 컨트롤 및 현황판 -->
     <div class="sticky-controls">
       <div class="input-row">
         <div><label>시험 일자</label><input type="date" id="testDate" onchange="updateClassDropdown()"></div>
@@ -219,7 +216,6 @@
       <div id="summaryStatsContainer"></div>
     </div>
     
-    <!-- 스크롤 명단 영역 -->
     <div id="studentList">
       <p style="grid-column: 1/-1; text-align:center; color: var(--text-sub); font-size:15px; padding: 40px 0;">상단에서 날짜와 반을 선택해주세요.</p>
     </div>
@@ -247,7 +243,6 @@
     <div id="manageTableContainer" style="overflow-x:auto;"></div>
   </div>
 
-  <!-- 🚀 v58: 명단 스크롤 맨 끝에 자연스럽게 이어지는 일괄 처리 풋터 -->
   <div class="batch-footer" id="globalBatchFooter">
     <div style="display:flex; flex-direction:column; gap:8px;">
       <div style="display:flex; gap:8px;">
@@ -299,7 +294,7 @@
 </div>
 
 <script>
-  // 🚀 선생님의 Supabase 정보
+  // 🚀 선생님의 Supabase 정보 적용 완료
   const SUPABASE_URL = "https://gcnyotbytdvdhqopienw.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjbnlvdGJ5dGR2ZGhxb3BpZW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNzI3MDYsImV4cCI6MjEwMjY0ODcwNn0.87ZPqxDJoTOW5frYEBkY1NlMv7fpcEsd_xxK6V77-W4";
 
@@ -348,7 +343,6 @@
     
     let html = '<option value="">선택</option>';
     if (isVacation || isHoliday || (day !== 2 && day !== 3)) {
-      // 🚀 v58: 전체 조정대상자 반 옵션 통합 (청운, 백운A, B, C 포함)
       html += '<option value="청운">청운</option><option value="백운A">백운A</option><option value="백운B">백운B</option><option value="백운C">백운C</option><option value="조정대상자">전체 조정대상자 반</option>';
     } else {
       html += '<option value="1-8">1-8반</option><option value="1-9">1-9반</option><option value="1-10">1-10반</option>';
@@ -439,10 +433,17 @@
       const dayOfWeek = targetDateObj.getDay();
       let filterDay = (dayOfWeek === 2) ? "화" : (dayOfWeek === 3) ? "수" : "";
       
+      // 🚀 v59: 중복 데이터 제거(Deduplication) 로직 완벽 적용
+      const uniqueRecordsMap = {};
+      (allRecords || []).forEach(r => {
+        uniqueRecordsMap[r.test_date + '_' + r.student_name] = r;
+      });
+      const uniqueRecords = Object.values(uniqueRecordsMap);
+
       const statsMap = {};
       const lastRecordMap = {};
 
-      (allRecords || []).forEach(r => {
+      uniqueRecords.forEach(r => {
         const name = r.student_name;
         const result = r.is_passed;
         const deadline = new Date(r.deadline);
@@ -478,11 +479,9 @@
           let isAdj = !!student.is_adjusted;
           const mainGroups = ["청운", "백운A", "백운B", "백운C"];
           
-          // 🚀 v58: 모든 그룹의 조정대상자를 '조정대상자 반'으로 완벽 분리
           if (g === "조정대상자") {
             if (isAdj && mainGroups.includes(sheetGroup)) match = true;
           } else if (mainGroups.includes(g)) {
-            // 해당 반을 선택했을 때는 '조정대상자가 아닌 일반 학생'만 표시
             if (sheetGroup === g && !isAdj) match = true;
           } else {
             if (sheetGroup === g) match = true;
@@ -495,7 +494,7 @@
           
           let currentStatus = 'Pass';
           let currentAction = '재시';
-          const todayRecord = (allRecords || []).find(r => r.test_date === targetDateStr && r.student_name === name);
+          const todayRecord = uniqueRecords.find(r => r.test_date === targetDateStr && r.student_name === name);
           if (todayRecord) {
             currentStatus = todayRecord.is_passed;
             if (currentStatus !== 'Pass') currentAction = todayRecord.action;
@@ -544,11 +543,13 @@
       const prevFailBadge = s.failedLastTime ? `<span class="prev-fail-badge">⚠️이전 미통과</span>` : '';
       const badges = (failBadge || prevFailBadge) ? `<div class="badge-wrapper">${failBadge}${prevFailBadge}</div>` : `<div class="badge-wrapper" style="min-height:0; margin-bottom:0;"></div>`;
       
+      const idSafe = s.name.replace(/\s/g, ''); // 띄어쓰기 오류 원천 방지
+      
       return `
-      <div class="student-card ${cardClass}" id="card-${s.name}" data-name="${s.name}" data-group="${s.group}" data-status="${s.isPassed}" data-action="${baseAction}" data-extra="${hasExtra}">
+      <div class="student-card ${cardClass}" id="card-${idSafe}" data-name="${s.name}" data-group="${s.group}" data-status="${s.isPassed}" data-action="${baseAction}" data-extra="${hasExtra}">
         ${badges}
         <div class="card-header">
-          <div class="name" onclick="setPass('${s.name}')">${s.name}</div>
+          <div class="name" onclick="setPass('${idSafe}')">${s.name}</div>
           <div class="card-meta-info">
             <div>${s.group} / ${s.mockGrade}등급 ${s.isAdjusted ? '(조정)' : ''}</div>
             <div style="color:var(--text-sub);">컷: ${calculateCutoff(s.mockGrade, s.isAdjusted)}개</div>
@@ -558,10 +559,10 @@
           ${s.isPassed === 'Pass' ? 'Pass' : (s.isPassed === 'Absence' ? '결석' : baseAction + (hasExtra ? ' (+빡지추가)' : ''))}
         </div>
         <div class="btn-group">
-          <button class="btn-small ${s.isPassed === 'Fail' && baseAction === '재시' ? 'active-fail' : ''}" onclick="setBaseAction('${s.name}', '재시')">재시</button>
-          <button class="btn-small ${s.isPassed === 'Fail' && baseAction === '빡지' ? 'active-fail' : ''}" onclick="setBaseAction('${s.name}', '빡지')">빡지</button>
-          <button class="btn-small ${s.isPassed === 'Fail' && hasExtra ? 'active-fail' : ''}" onclick="toggleExtraAction('${s.name}')">빡지+</button>
-          <button class="btn-small ${s.isPassed === 'Absence' ? 'active-absent' : ''}" onclick="setAbsent('${s.name}')">결석</button>
+          <button class="btn-small ${s.isPassed === 'Fail' && baseAction === '재시' ? 'active-fail' : ''}" onclick="setBaseAction('${idSafe}', '재시')">재시</button>
+          <button class="btn-small ${s.isPassed === 'Fail' && baseAction === '빡지' ? 'active-fail' : ''}" onclick="setBaseAction('${idSafe}', '빡지')">빡지</button>
+          <button class="btn-small ${s.isPassed === 'Fail' && hasExtra ? 'active-fail' : ''}" onclick="toggleExtraAction('${idSafe}')">빡지+</button>
+          <button class="btn-small ${s.isPassed === 'Absence' ? 'active-absent' : ''}" onclick="setAbsent('${idSafe}')">결석</button>
         </div>
       </div>`;
     }).join('');
@@ -570,10 +571,10 @@
     updateSummaryStats(); 
   }
 
-  function setBaseAction(n, a) { const c = document.getElementById('card-'+n); c.className = 'student-card fail'; c.setAttribute('data-status', 'Fail'); c.setAttribute('data-action', a); renderCardButtons(c); }
-  function toggleExtraAction(n) { const c = document.getElementById('card-'+n); const currentStatus = c.getAttribute('data-status'); if (currentStatus !== 'Fail') { c.className = 'student-card fail'; c.setAttribute('data-status', 'Fail'); c.setAttribute('data-action', '재시'); } const currentExtra = c.getAttribute('data-extra') === 'true'; c.setAttribute('data-extra', !currentExtra); renderCardButtons(c); }
-  function setPass(n) { const c = document.getElementById('card-'+n); c.className = 'student-card pass'; c.setAttribute('data-status', 'Pass'); c.setAttribute('data-action', '해당없음'); c.setAttribute('data-extra', 'false'); renderCardButtons(c); }
-  function setAbsent(n) { const c = document.getElementById('card-'+n); c.className = 'student-card absent'; c.setAttribute('data-status', 'Absence'); c.setAttribute('data-action', '결석'); c.setAttribute('data-extra', 'false'); renderCardButtons(c); }
+  function setBaseAction(idSafe, a) { const c = document.getElementById('card-'+idSafe); c.className = 'student-card fail'; c.setAttribute('data-status', 'Fail'); c.setAttribute('data-action', a); renderCardButtons(c); }
+  function toggleExtraAction(idSafe) { const c = document.getElementById('card-'+idSafe); const currentStatus = c.getAttribute('data-status'); if (currentStatus !== 'Fail') { c.className = 'student-card fail'; c.setAttribute('data-status', 'Fail'); c.setAttribute('data-action', '재시'); } const currentExtra = c.getAttribute('data-extra') === 'true'; c.setAttribute('data-extra', !currentExtra); renderCardButtons(c); }
+  function setPass(idSafe) { const c = document.getElementById('card-'+idSafe); c.className = 'student-card pass'; c.setAttribute('data-status', 'Pass'); c.setAttribute('data-action', '해당없음'); c.setAttribute('data-extra', 'false'); renderCardButtons(c); }
+  function setAbsent(idSafe) { const c = document.getElementById('card-'+idSafe); c.className = 'student-card absent'; c.setAttribute('data-status', 'Absence'); c.setAttribute('data-action', '결석'); c.setAttribute('data-extra', 'false'); renderCardButtons(c); }
 
   function renderCardButtons(card) {
     const status = card.getAttribute('data-status');
@@ -589,7 +590,7 @@
     updateSummaryStats(); 
   }
 
-  // 🚀 v58: 저장 후 화면 초기화 방지 (loadStudents 호출 제거)
+  // 🚀 v59: 덮어쓰기 오류 원천 방지 (기존 데이터 삭제 후 최신 데이터 삽입)
   async function saveAll() {
     const upsertData = Array.from(document.querySelectorAll('.student-card')).map(c => {
       const status = c.getAttribute('data-status');
@@ -597,20 +598,34 @@
       if (status === 'Fail' && c.getAttribute('data-extra') === 'true') finalAction += '+빡지추가';
       let dbStatus = status === 'Fail' ? '대기중' : (status === 'Absence' ? '결석처리' : '해당없음');
       return { 
-        test_date: document.getElementById('testDate').value, main_group: c.getAttribute('data-group'), 
-        student_name: c.getAttribute('data-name'), deadline: document.getElementById('deadlineDate').value, 
-        is_passed: status, action: finalAction, status: dbStatus
+        test_date: document.getElementById('testDate').value, 
+        main_group: c.getAttribute('data-group'), 
+        student_name: c.getAttribute('data-name'), 
+        deadline: document.getElementById('deadlineDate').value, 
+        is_passed: status, 
+        action: finalAction, 
+        status: dbStatus
       };
     });
     
+    if (upsertData.length === 0) return;
+    
+    const targetDate = document.getElementById('testDate').value;
+    const names = upsertData.map(d => d.student_name);
+    
     const b = document.getElementById('saveBtn'); b.innerText = "저장 중..."; b.disabled = true;
     try {
-      const { error } = await _supabase.from('exam_records').upsert(upsertData, { onConflict: 'test_date, student_name' });
+      // 1. 해당 날짜에 있는 이 학생들의 모든 낡은 기록들을 강제로 지움 (중복 방지)
+      await _supabase.from('exam_records').delete().eq('test_date', targetDate).in('student_name', names);
+      
+      // 2. 방금 화면에서 세팅한 따끈따끈한 최신 기록만 새롭게 삽입
+      const { error } = await _supabase.from('exam_records').insert(upsertData);
+      
       if (error) throw error;
-      alert("성공적으로 저장되었습니다! ⚡"); 
+      alert("성공적으로 저장되었습니다! ⚡\n(이제 기존 화면은 그대로 유지됩니다.)"); 
       b.innerText = "결과 일괄 저장"; 
       b.disabled = false; 
-      // loadStudents(); <-- 화면이 재로딩되어 초기화되는 것을 막기 위해 삭제. 이제 상태 유지됨!
+      // loadStudents(); <-- 화면이 재로딩되어 초기화되는 것을 막기 위해 작동 안하게 유지
     } catch (err) { console.error(err); alert("저장 실패"); b.disabled = false; }
   }
 
@@ -620,9 +635,18 @@
     document.getElementById(container).innerHTML = `<div class="loading-spinner"></div><p style="text-align:center; color:var(--text-sub);">명단을 추합하고 있습니다...</p>`;
     document.getElementById('globalBatchFooter').style.display = 'none';
     try {
-      const [{data: allStudents}, {data: pendingRecords}] = await Promise.all([ _supabase.from('students').select('*'), _supabase.from('exam_records').select('*').eq('status', '대기중') ]);
+      const [{data: allStudents}, {data: allRecords}] = await Promise.all([ 
+        _supabase.from('students').select('*'), 
+        _supabase.from('exam_records').select('*')
+      ]);
       const studentMeta = {};
       (allStudents || []).forEach(s => { studentMeta[s.name] = { isAdj: !!s.is_adjusted, mockGrade: s.mock_grade || '-' }; });
+      
+      // 중복 방지 필터링
+      const uniqueRecordsMap = {};
+      (allRecords || []).forEach(r => { uniqueRecordsMap[r.test_date + '_' + r.student_name] = r; });
+      const pendingRecords = Object.values(uniqueRecordsMap).filter(r => r.status === '대기중');
+      
       const processedData = {};
       (pendingRecords || []).forEach(r => {
         const dStr = r.test_date;
@@ -705,9 +729,14 @@
     document.getElementById('statsTableContainer').innerHTML = `<div class="loading-spinner"></div><p style="text-align:center; color:var(--text-sub);">초고속 통계 산출 중...</p>`;
     try {
       const [{data: allStudents}, {data: allRecords}] = await Promise.all([ _supabase.from('students').select('*'), _supabase.from('exam_records').select('*') ]);
+      
+      const uniqueRecordsMap = {};
+      (allRecords || []).forEach(r => { uniqueRecordsMap[r.test_date + '_' + r.student_name] = r; });
+      const uniqueRecords = Object.values(uniqueRecordsMap);
+      
       const statsMap = {};
       const today = new Date(); today.setHours(0,0,0,0);
-      (allRecords || []).forEach(r => {
+      uniqueRecords.forEach(r => {
         const name = r.student_name;
         if (!statsMap[name]) statsMap[name] = { pass: 0, fail: 0, overdue: 0, absent: 0 };
         if (r.is_passed === 'Pass') statsMap[name].pass++;
@@ -841,12 +870,16 @@
 
   async function copyText(date, dl, tabId, btn) {
     const originalText = btn.innerText; btn.innerText = "복사 중...";
-    const { data } = await _supabase.from('exam_records').select('*').eq('status', '대기중');
+    const { data } = await _supabase.from('exam_records').select('*');
     
+    const uniqueMap = {};
+    (data || []).forEach(r => { uniqueMap[r.test_date + '_' + r.student_name] = r; });
+    const pendingData = Object.values(uniqueMap).filter(r => r.status === '대기중');
+
     const today = new Date(); today.setHours(0,0,0,0);
     const oMap = {}; const rMap = {}; const pMap = {}; const ppMap = {};
     
-    (data || []).forEach(r => {
+    pendingData.forEach(r => {
       const dDate = new Date(r.deadline); dDate.setHours(0,0,0,0);
       const it = { group: r.main_group, name: r.student_name, action: r.action };
       

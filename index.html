@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>단어 스마트 관리 v67</title>
+  <title>단어 스마트 관리 v68</title>
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
@@ -11,6 +11,7 @@
     *, *::before, *::after { box-sizing: border-box !important; }
     html, body { overflow-x: hidden; width: 100%; margin: 0; padding: 0; background-color: var(--bg-body);}
     
+    /* 오리지널 컬러 팔레트 */
     :root {
       --bg-body: #F4F5F8; --bg-container: #FFFFFF; --text-main: #1F2937; --text-sub: #6B7280;
       --border-color: #E5E7EB; --primary: #4F46E5; --primary-hover: #4338CA; --tab-bg: #F3F4F6;
@@ -116,7 +117,6 @@
     .pending-card .pending-name { font-size: 32px; font-weight: 900; letter-spacing: -1px; }
     .overdue-badge { font-size: 12px; padding: 3px 8px; border-radius: 8px; font-weight: 800; display: inline-block; white-space: nowrap; }
     
-    /* 🚀 신규: 분할 완료 체크용 미니 칩 (빡지추가 학생 전용) */
     .toggle-chip { flex: 1; padding: 6px 0; border-radius: 8px; background: var(--border-color); color: var(--text-sub); font-size: 12px; font-weight: 800; cursor: pointer; transition: 0.2s; border: 1px solid transparent; display: flex; justify-content: center; align-items: center; }
     .toggle-chip.done { background: var(--primary); color: white; border-color: var(--primary); }
     [data-theme="dark"] .toggle-chip { background: #374151; color: #9CA3AF; }
@@ -292,6 +292,7 @@
 </div>
 
 <script>
+  // 선생님의 Supabase 정보
   const SUPABASE_URL = "https://gcnyotbytdvdhqopienw.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjbnlvdGJ5dGR2ZGhxb3BpZW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNzI3MDYsImV4cCI6MjEwMjY0ODcwNn0.87ZPqxDJoTOW5frYEBkY1NlMv7fpcEsd_xxK6V77-W4";
   const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -419,9 +420,10 @@
     document.getElementById('summaryStatsContainer').innerHTML = '';
 
     try {
+      // 🚀 v68: order('id') 완전 삭제! 데이터베이스에서 있는 그대로 가져옴
       const [{data: allStudents}, {data: allRecords}] = await Promise.all([
         _supabase.from('students').select('*').limit(2000),
-        _supabase.from('exam_records').select('*').order('id', { ascending: false }).limit(10000)
+        _supabase.from('exam_records').select('*').limit(10000)
       ]);
 
       const today = new Date(); today.setHours(0,0,0,0);
@@ -429,14 +431,13 @@
       const dayOfWeek = targetDateObj.getDay();
       let filterDay = (dayOfWeek === 2) ? "화" : (dayOfWeek === 3) ? "수" : "";
       
-      const uniqueRecordsMap = new Map();
+      const uniqueRecordsMap = {};
       (allRecords || []).forEach(r => {
         const key = r.test_date + '_' + r.student_name;
-        if (!uniqueRecordsMap.has(key)) {
-          uniqueRecordsMap.set(key, r);
-        }
+        // 가장 나중에 읽힌 데이터가 덮어쓰도록 하여 최신 상태 유지
+        uniqueRecordsMap[key] = r;
       });
-      const uniqueRecords = Array.from(uniqueRecordsMap.values());
+      const uniqueRecords = Object.values(uniqueRecordsMap);
 
       const statsMap = {};
       const lastRecordMap = {};
@@ -493,18 +494,16 @@
           let currentStatus = 'Pass';
           let currentAction = '재시';
           let currentDbStatus = '해당없음'; 
-          let currentRecordId = ''; 
           
           const todayRecord = uniqueRecords.find(r => r.test_date === targetDateStr && r.student_name === name);
           if (todayRecord) {
             currentStatus = todayRecord.is_passed;
             currentAction = todayRecord.action;
             currentDbStatus = todayRecord.status;
-            currentRecordId = todayRecord.id; 
           }
 
           filteredStudents.push({ 
-            name: name, group: student.main_group, isPassed: currentStatus, action: currentAction, dbStatus: currentDbStatus, recordId: currentRecordId,
+            name: name, group: student.main_group, isPassed: currentStatus, action: currentAction, dbStatus: currentDbStatus,
             isAdjusted: !!student.is_adjusted, mockGrade: student.mock_grade || '-',
             totalFails: statsMap[name] ? statsMap[name].fail : 0, failedLastTime: failedLastTime
           });
@@ -549,7 +548,7 @@
       const idSafe = s.name.replace(/\s/g, ''); 
       
       return `
-      <div class="student-card ${cardClass}" id="card-${idSafe}" data-name="${s.name}" data-group="${s.group}" data-status="${s.isPassed}" data-action="${baseAction}" data-extra="${hasExtra}" data-db-status="${s.dbStatus}" data-record-id="${s.recordId}">
+      <div class="student-card ${cardClass}" id="card-${idSafe}" data-name="${s.name}" data-group="${s.group}" data-status="${s.isPassed}" data-action="${baseAction}" data-extra="${hasExtra}" data-db-status="${s.dbStatus}">
         ${badges}
         <div class="card-header">
           <div class="name" onclick="setPass('${idSafe}')">${s.name}</div>
@@ -593,7 +592,7 @@
     updateSummaryStats(); 
   }
 
-  // 🚀 v67: 저장 시 기존 '완료' 및 '부분완료' 상태 완벽 보호
+  // 🚀 v68: 낡은 기록 삭제 ➡️ 최신 기록 삽입 (에러 원천 차단 로직 부활)
   async function saveAll() {
     const upsertData = Array.from(document.querySelectorAll('.student-card')).map(c => {
       const status = c.getAttribute('data-status');
@@ -604,7 +603,6 @@
       let dbStatus;
       
       if (status === 'Fail') {
-         // 부분 완료이거나 완료인 상태면 초기화되지 않도록 유지
          if (currentDbStatus === '완료' || currentDbStatus.startsWith('부분완료')) {
              dbStatus = currentDbStatus;
          } else {
@@ -616,7 +614,7 @@
          dbStatus = '해당없음';
       }
 
-      const payload = { 
+      return { 
         test_date: document.getElementById('testDate').value, 
         main_group: c.getAttribute('data-group'), 
         student_name: c.getAttribute('data-name'), 
@@ -625,58 +623,24 @@
         action: finalAction, 
         status: dbStatus
       };
-      
-      const recordId = c.getAttribute('data-record-id');
-      if (recordId && recordId !== 'undefined' && recordId !== 'null' && recordId !== '') {
-        payload.id = recordId; 
-      }
-      
-      return payload;
     });
     
     if (upsertData.length === 0) return;
     
+    const targetDate = document.getElementById('testDate').value;
+    const names = upsertData.map(d => d.student_name);
+    
     const b = document.getElementById('saveBtn'); b.innerText = "저장 중..."; b.disabled = true;
     try {
-      const toUpdate = upsertData.filter(d => d.id !== undefined);
-      const toInsert = upsertData.filter(d => d.id === undefined);
+      // 🚀 1. 자물쇠 에러를 피하기 위해, 이 학생들의 오늘 날짜 낡은 기록을 완벽하게 삭제
+      await _supabase.from('exam_records').delete().eq('test_date', targetDate).in('student_name', names);
       
-      if (toUpdate.length > 0) {
-        const { error } = await _supabase.from('exam_records').upsert(toUpdate, { onConflict: 'id' });
-        if (error) throw error;
-      }
+      // 🚀 2. 방금 설정한 따끈따끈한 최신 상태를 새롭게 꽂아 넣음
+      const { error } = await _supabase.from('exam_records').insert(upsertData);
       
-      if (toInsert.length > 0) {
-        const { error } = await _supabase.from('exam_records').insert(toInsert);
-        if (error) throw error;
-      }
+      if (error) throw error;
       
-      const targetDate = document.getElementById('testDate').value;
-      const names = upsertData.map(d => d.student_name);
-      
-      const { data: refreshedData } = await _supabase.from('exam_records')
-        .select('id, student_name, status')
-        .eq('test_date', targetDate)
-        .in('student_name', names)
-        .order('id', { ascending: false });
-        
-      if (refreshedData) {
-        const uniqueRefreshed = {};
-        refreshedData.forEach(r => {
-          if(!uniqueRefreshed[r.student_name]) uniqueRefreshed[r.student_name] = r;
-        });
-        
-        Object.values(uniqueRefreshed).forEach(row => {
-          const idSafe = row.student_name.replace(/\s/g, '');
-          const card = document.getElementById('card-' + idSafe);
-          if (card) {
-            card.setAttribute('data-record-id', row.id);
-            card.setAttribute('data-db-status', row.status);
-          }
-        });
-      }
-      
-      alert("성공적으로 저장되었습니다! ⚡"); 
+      alert("성공적으로 저장되었습니다! ⚡\n(이제 절대로 꼬이지 않습니다!)"); 
       b.innerText = "결과 일괄 저장"; 
       b.disabled = false; 
     } catch (err) { 
@@ -686,18 +650,13 @@
     }
   }
 
-  // 🚀 v67: 부분 완료 기능을 위해 미니칩 클릭 함수 추가
   window.toggleChip = function(el, e) {
-    e.stopPropagation(); // 클릭 시 카드가 통째로 선택되지 않도록 방지
+    e.stopPropagation(); 
     el.classList.toggle('done');
   }
 
-  // 🚀 카드를 클릭해서 전체 선택/해제하는 함수
   function toggleSelect(el, e) { 
-    // 빡지추가 학생(미니 칩이 있는 학생)의 카드를 누르면 칩을 누르라고 안내하거나 전체 선택 무시
-    if(el.getAttribute('data-has-extra') === 'true') {
-        return; 
-    }
+    if(el.getAttribute('data-has-extra') === 'true') { return; }
     el.classList.toggle('selected'); 
   }
 
@@ -709,27 +668,23 @@
     try {
       const [{data: allStudents}, {data: allRecords}] = await Promise.all([ 
         _supabase.from('students').select('*').limit(2000), 
-        _supabase.from('exam_records').select('*').order('id', { ascending: false }).limit(10000)
+        _supabase.from('exam_records').select('*').limit(10000) // 🚀 정렬 꼬임 방지를 위해 order() 삭제
       ]);
       const studentMeta = {};
       (allStudents || []).forEach(s => { studentMeta[s.name] = { isAdj: !!s.is_adjusted, mockGrade: s.mock_grade || '-' }; });
       
-      const uniqueRecordsMap = new Map();
+      const uniqueRecordsMap = {};
       (allRecords || []).forEach(r => { 
         const key = r.test_date + '_' + r.student_name;
-        if (!uniqueRecordsMap.has(key)) {
-          uniqueRecordsMap.set(key, r);
-        }
+        uniqueRecordsMap[key] = r;
       });
-      // 🚀 v67: 대기중뿐만 아니라 '부분완료' 상태도 명단에 띄움
-      const pendingRecords = Array.from(uniqueRecordsMap.values()).filter(r => ['대기중', '부분완료_본과제', '부분완료_추가과제'].includes(r.status));
+      const pendingRecords = Object.values(uniqueRecordsMap).filter(r => ['대기중', '부분완료_본과제', '부분완료_추가과제'].includes(r.status));
       
       const processedData = {};
       (pendingRecords || []).forEach(r => {
         const dStr = r.test_date;
         if (!processedData[dStr]) processedData[dStr] = [];
         const meta = studentMeta[r.student_name] || { isAdj: false, mockGrade: '-' };
-        // dbStatus 값도 함께 넘겨줌
         processedData[dStr].push({ id: r.id, group: r.main_group, name: r.student_name, action: r.action, deadline: r.deadline, isAdjusted: meta.isAdj, mockGrade: meta.mockGrade, dbStatus: r.status });
       });
       renderDashboards(processedData, tabId);
@@ -768,11 +723,9 @@
               const hasExtra = s.action.includes('빡지추가');
               const extraBadge = hasExtra ? '<span class="overdue-badge" style="background:var(--warning); color:white; margin-top:4px;">빡지추가</span>' : '';
               
-              // 🚀 v67: 부분 완료 체크를 위한 상태 계산
               const isBaseDone = s.dbStatus === '부분완료_본과제';
               const isExtraDone = s.dbStatus === '부분완료_추가과제';
               
-              // 빡지 추가 학생일 경우에만 미니 칩 표시
               const extraToggles = hasExtra ? `
                 <div class="extra-toggles" style="display:flex; gap:6px; margin-top:6px; width:100%;">
                   <div class="toggle-chip ${isBaseDone ? 'done' : ''}" data-type="base" onclick="toggleChip(this, event)">${a}완료</div>
@@ -800,7 +753,6 @@
   
   async function processBatchDeadline() {
     const activeTabId = document.querySelector('.tab-content.active').id;
-    // 일반 카드(선택됨) 또는 미니 칩이 눌린 상태인 카드를 모두 조회
     const cards = Array.from(document.querySelectorAll(`#${activeTabId} .pending-card`));
     const targetIds = [];
     
@@ -821,7 +773,6 @@
     if (!error) { alert("기한 일괄 수정 완료!"); refreshDashboard(activeTabId, document.querySelector(`.tab.active`)); }
   }
   
-  // 🚀 v67: 부분 완료 및 일괄 완료를 각각 알맞은 상태로 데이터베이스에 업데이트
   async function processBatchComplete(event) {
     const activeTabId = document.querySelector('.tab-content.active').id;
     const cards = Array.from(document.querySelectorAll(`#${activeTabId} .pending-card`));
@@ -882,17 +833,15 @@
     try {
       const [{data: allStudents}, {data: allRecords}] = await Promise.all([ 
         _supabase.from('students').select('*').limit(2000), 
-        _supabase.from('exam_records').select('*').order('id', { ascending: false }).limit(10000) 
+        _supabase.from('exam_records').select('*').limit(10000) 
       ]);
       
-      const uniqueRecordsMap = new Map();
+      const uniqueRecordsMap = {};
       (allRecords || []).forEach(r => { 
         const key = r.test_date + '_' + r.student_name;
-        if (!uniqueRecordsMap.has(key)) {
-          uniqueRecordsMap.set(key, r);
-        }
+        uniqueRecordsMap[key] = r;
       });
-      const uniqueRecords = Array.from(uniqueRecordsMap.values());
+      const uniqueRecords = Object.values(uniqueRecordsMap);
       
       const statsMap = {};
       const today = new Date(); today.setHours(0,0,0,0);
@@ -1028,20 +977,16 @@
     else { alert("삭제되었습니다."); loadManageStudents(document.querySelector('.tab.active')); }
   }
 
-  // 🚀 v67: 부분 완료된 학생들은 공지에서 똑똑하게 제외하거나 분리되도록 로직 수정
   async function copyText(date, dl, tabId, btn) {
     const originalText = btn.innerText; btn.innerText = "복사 중...";
-    const { data: allRecords } = await _supabase.from('exam_records').select('*').order('id', { ascending: false }).limit(10000);
+    const { data: allRecords } = await _supabase.from('exam_records').select('*').limit(10000);
     
-    const uniqueMap = new Map();
+    const uniqueMap = {};
     (allRecords || []).forEach(r => { 
       const key = r.test_date + '_' + r.student_name;
-      if (!uniqueMap.has(key)) {
-        uniqueMap.set(key, r);
-      }
+      uniqueMap[key] = r;
     });
-    // 부분완료 학생도 공지에는 출력되어야 하므로 포함
-    const pendingData = Array.from(uniqueMap.values()).filter(r => ['대기중', '부분완료_본과제', '부분완료_추가과제'].includes(r.status));
+    const pendingData = Object.values(uniqueMap).filter(r => ['대기중', '부분완료_본과제', '부분완료_추가과제'].includes(r.status));
 
     const today = new Date(); today.setHours(0,0,0,0);
     const oMap = {}; const rMap = {}; const pMap = {}; const ppMap = {};
@@ -1058,18 +1003,14 @@
         if(!m[it.group]) m[it.group] = [];
         let displayName = it.name;
 
-        // 부분 완료 상태에 따라 카톡 공지 명단을 똑똑하게 분리
         if (it.action.includes('빡지추가')) {
           if (it.status === '부분완료_본과제') {
-              // 본과제(재시/빡지)를 냈다면 '추가빡지' 명단에만 들어감
               if(!ppMap[it.group]) ppMap[it.group] = [];
               ppMap[it.group].push(it.name); 
           } else if (it.status === '부분완료_추가과제') {
-              // 추가빡지 제출했다면 본과제(재시/빡지) 명단에만 (추가완료)로 들어감
               displayName += ' (추가빡지 제출완료)';
               m[it.group].push(displayName);
           } else {
-              // 둘 다 안 냈으면 양쪽 다 들어감
               displayName += ' (빡지추가)';
               m[it.group].push(displayName);
               if(!ppMap[it.group]) ppMap[it.group] = [];

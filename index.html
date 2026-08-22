@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>단어 스마트 관리 v62</title>
+  <title>단어 스마트 관리 v63</title>
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
@@ -135,6 +135,7 @@
     .modal-content input[type="text"]:focus { border-color: var(--primary); }
     .modal-content .check-row { display:flex; align-items:center; gap:10px; margin-top:5px; cursor:pointer;}
     
+    /* 모바일 최적화 */
     @media (max-width: 768px) {
       body { padding: 0 5px 85px 5px; background-color: var(--bg-body); }
       .container { padding: 0 10px; border-radius: 16px; box-shadow: none; background: transparent; min-height: calc(100vh - 85px); }
@@ -291,7 +292,6 @@
 </div>
 
 <script>
-  // 선생님의 Supabase 정보
   const SUPABASE_URL = "https://gcnyotbytdvdhqopienw.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjbnlvdGJ5dGR2ZGhxb3BpZW53Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNzI3MDYsImV4cCI6MjEwMjY0ODcwNn0.87ZPqxDJoTOW5frYEBkY1NlMv7fpcEsd_xxK6V77-W4";
   const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -500,7 +500,7 @@
             currentStatus = todayRecord.is_passed;
             currentAction = todayRecord.action;
             currentDbStatus = todayRecord.status;
-            currentRecordId = todayRecord.id; // 🚀 고유 ID 기억!
+            currentRecordId = todayRecord.id; 
           }
 
           filteredStudents.push({ 
@@ -548,7 +548,6 @@
       
       const idSafe = s.name.replace(/\s/g, ''); 
       
-      // 🚀 data-record-id를 심어서 저장 시 Update(수정)가 되도록 함
       return `
       <div class="student-card ${cardClass}" id="card-${idSafe}" data-name="${s.name}" data-group="${s.group}" data-status="${s.isPassed}" data-action="${baseAction}" data-extra="${hasExtra}" data-db-status="${s.dbStatus}" data-record-id="${s.recordId}">
         ${badges}
@@ -594,7 +593,7 @@
     updateSummaryStats(); 
   }
 
-  // 🚀 v62: 지우지 않고 고유 ID로 덮어쓰기 (Update) 하여 완료 처리 보호 및 초기화 방지
+  // 🚀 v63: 명단 누락자(신규 추가 학생) 오류를 완벽하게 차단하는 2-Track 저장 시스템!
   async function saveAll() {
     const upsertData = Array.from(document.querySelectorAll('.student-card')).map(c => {
       const status = c.getAttribute('data-status');
@@ -605,7 +604,6 @@
       let dbStatus;
       
       if (status === 'Fail') {
-         // 🚀 미통과 탭에서 '완료' 처리한 아이는 다시 저장해도 '완료'로 유지!
          dbStatus = (currentDbStatus === '완료') ? '완료' : '대기중';
       } else if (status === 'Absence') {
          dbStatus = '결석처리';
@@ -623,9 +621,8 @@
         status: dbStatus
       };
       
-      // 🚀 고유 ID가 있으면 삽입(Insert) 대신 수정(Update)을 하도록 ID 추가
       const recordId = c.getAttribute('data-record-id');
-      if (recordId && recordId !== 'undefined' && recordId !== '') {
+      if (recordId && recordId !== 'undefined' && recordId !== 'null' && recordId !== '') {
         payload.id = parseInt(recordId, 10);
       }
       
@@ -636,14 +633,38 @@
     
     const b = document.getElementById('saveBtn'); b.innerText = "저장 중..."; b.disabled = true;
     try {
-      // 삭제 없이 안전하게 Upsert(업데이트 또는 삽입) 진행 후 결과 받기
-      const { data, error } = await _supabase.from('exam_records').upsert(upsertData).select();
+      // 🚀 1. 기존 학생(ID 있음)과 신규 학생(ID 없음) 분리!
+      const toUpdate = upsertData.filter(d => d.id !== undefined);
+      const toInsert = upsertData.filter(d => d.id === undefined);
       
-      if (error) throw error;
+      // 🚀 2. 각각 맞는 방법으로 데이터베이스에 전송 (에러 원천 차단)
+      if (toUpdate.length > 0) {
+        const { error } = await _supabase.from('exam_records').upsert(toUpdate, { onConflict: 'id' });
+        if (error) throw error;
+      }
       
-      // 🚀 방금 저장된 따끈따끈한 ID를 화면 카드에 즉시 주입 (다른 반 갔다 오지 않아도 됨)
-      if (data) {
-        data.forEach(row => {
+      if (toInsert.length > 0) {
+        const { error } = await _supabase.from('exam_records').insert(toInsert);
+        if (error) throw error;
+      }
+      
+      // 🚀 3. 새로 생성된 ID를 화면에 즉각 연동시켜 재저장 시 오류 방지
+      const targetDate = document.getElementById('testDate').value;
+      const names = upsertData.map(d => d.student_name);
+      
+      const { data: refreshedData } = await _supabase.from('exam_records')
+        .select('id, student_name, status')
+        .eq('test_date', targetDate)
+        .in('student_name', names)
+        .order('id', { ascending: false });
+        
+      if (refreshedData) {
+        const uniqueRefreshed = {};
+        refreshedData.forEach(r => {
+          if(!uniqueRefreshed[r.student_name]) uniqueRefreshed[r.student_name] = r;
+        });
+        
+        Object.values(uniqueRefreshed).forEach(row => {
           const idSafe = row.student_name.replace(/\s/g, '');
           const card = document.getElementById('card-' + idSafe);
           if (card) {
@@ -653,10 +674,14 @@
         });
       }
       
-      alert("성공적으로 저장되었습니다! ⚡\n(이제 입력 내용이 절대로 초기화되지 않습니다.)"); 
+      alert("성공적으로 저장되었습니다! ⚡\n(이제 입력 내용이 안전하게 유지됩니다.)"); 
       b.innerText = "결과 일괄 저장"; 
       b.disabled = false; 
-    } catch (err) { console.error(err); alert("저장 실패"); b.disabled = false; }
+    } catch (err) { 
+      console.error(err); 
+      alert("저장 실패: " + err.message); 
+      b.disabled = false; 
+    }
   }
 
   async function refreshDashboard(tabId, el) {
@@ -679,7 +704,6 @@
           uniqueRecordsMap.set(key, r);
         }
       });
-      // 완료 처리되지 않은 대기중 명단만 불러옴
       const pendingRecords = Array.from(uniqueRecordsMap.values()).filter(r => r.status === '대기중');
       
       const processedData = {};

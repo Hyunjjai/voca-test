@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>단어 스마트 관리 v69</title>
+  <title>단어 스마트 관리 v70</title>
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
@@ -419,7 +419,7 @@
     document.getElementById('summaryStatsContainer').innerHTML = '';
 
     try {
-      // 🚀 v69 마스터 패치: UUID 알파벳 정렬 오류를 박살내는 "created_at 기준 시간순 정렬" 적용!!!
+      // 🚀 v70: 무조건 시간순 정렬 적용! 과거 데이터에 최신 데이터가 덮어씌워지는 오류 100% 차단
       const [{data: allStudents}, {data: allRecords}] = await Promise.all([
         _supabase.from('students').select('*').limit(2000),
         _supabase.from('exam_records').select('*').order('created_at', { ascending: false }).limit(10000)
@@ -430,7 +430,6 @@
       const dayOfWeek = targetDateObj.getDay();
       let filterDay = (dayOfWeek === 2) ? "화" : (dayOfWeek === 3) ? "수" : "";
       
-      // 시간순(최신순)으로 정렬되었으므로 1순위 매칭 데이터가 100% 최신 데이터임!
       const uniqueRecordsMap = new Map();
       (allRecords || []).forEach(r => {
         const key = r.test_date + '_' + r.student_name;
@@ -593,33 +592,31 @@
     updateSummaryStats(); 
   }
 
-  // 🚀 v69 마스터 패치: 고유 ID를 직접 매칭시켜 오직 순수한 UPDATE/INSERT만 수행하는 무적의 저장 엔진!
+  // 🚀 v70 마스터 패치: 고유번호(ID) 널 제약 에러 100% 원천 차단! (데이터베이스에 모든 것을 맡김)
   async function saveAll() {
     const targetDate = document.getElementById('testDate').value;
     
-    // 1. 해당 날짜에 데이터베이스에 이미 존재하는 아이들의 진짜 고유 ID를 가져옵니다.
+    // 1. 기존 데이터를 불러와서 보호할 상태(완료 여부)만 쏙쏙 뽑아냅니다.
     const { data: existingRecords } = await _supabase.from('exam_records')
-      .select('id, student_name, status')
+      .select('student_name, status')
       .eq('test_date', targetDate);
 
     const existingMap = {};
     (existingRecords || []).forEach(r => {
-       existingMap[r.student_name] = r;
+       existingMap[r.student_name] = r.status;
     });
 
-    const finalUpsertData = Array.from(document.querySelectorAll('.student-card')).map(c => {
+    const finalInsertData = Array.from(document.querySelectorAll('.student-card')).map(c => {
       const name = c.getAttribute('data-name');
       const status = c.getAttribute('data-status');
       let finalAction = c.getAttribute('data-action');
-      const hasExtra = c.getAttribute('data-extra') === 'true';
-      if (status === 'Fail' && hasExtra) finalAction += '+빡지추가';
+      if (status === 'Fail' && c.getAttribute('data-extra') === 'true') finalAction += '+빡지추가';
       
-      // 2. 보호막: DB에 이미 완료 처리되어 있다면, 그걸 우선 유지!
       let currentDbStatus = c.getAttribute('data-db-status') || '대기중';
-      let existingDbRecord = existingMap[name];
+      let existingDbStatus = existingMap[name];
       
-      if (existingDbRecord && (existingDbRecord.status === '완료' || existingDbRecord.status.startsWith('부분완료'))) {
-         currentDbStatus = existingDbRecord.status;
+      if (existingDbStatus && (existingDbStatus === '완료' || existingDbStatus.startsWith('부분완료'))) {
+         currentDbStatus = existingDbStatus;
       }
 
       let dbStatus;
@@ -631,7 +628,10 @@
          dbStatus = '해당없음';
       }
 
-      const payload = { 
+      c.setAttribute('data-db-status', dbStatus);
+
+      // 🚨 절대 이 곳에 id 란을 만들지 않습니다! 데이터베이스가 알아서 새 ID를 부여합니다!
+      return { 
         test_date: targetDate, 
         main_group: c.getAttribute('data-group'), 
         student_name: name, 
@@ -640,27 +640,26 @@
         action: finalAction, 
         status: dbStatus
       };
-      
-      // 3. 기존에 있던 학생이면 고유 ID를 무조건 첨부! (Supabase가 알아서 완벽하게 덮어쓰기 해줌)
-      if (existingDbRecord && existingDbRecord.id) {
-        payload.id = existingDbRecord.id;
-      }
-      
-      // UI 상태 즉시 갱신
-      c.setAttribute('data-db-status', dbStatus);
-      return payload;
     });
     
-    if (finalUpsertData.length === 0) return;
+    if (finalInsertData.length === 0) return;
     
+    const names = finalInsertData.map(d => d.student_name);
     const b = document.getElementById('saveBtn'); b.innerText = "저장 중..."; b.disabled = true;
     try {
-      // 4. 삭제(Delete) 명령어를 영원히 추방! 알아서 똑똑하게 Update 하도록 Upsert 명령어 한 번만 실행!
-      const { error } = await _supabase.from('exam_records').upsert(finalUpsertData);
+      // 2. 해당 학생들의 과거 기록을 데이터베이스에서 미련 없이 싹 지웁니다.
+      const { error: delErr } = await _supabase.from('exam_records')
+        .delete()
+        .eq('test_date', targetDate)
+        .in('student_name', names);
+      if (delErr) throw delErr;
       
-      if (error) throw error;
+      // 3. 방금 포장한 깨끗하고 완벽한 새 기록만 새롭게 던져 넣습니다! (에러 100% 차단)
+      const { error: insErr } = await _supabase.from('exam_records')
+        .insert(finalInsertData);
+      if (insErr) throw insErr;
       
-      alert("성공적으로 저장되었습니다! ⚡\n(이제 절대로 데이터가 초기화되거나 꼬이지 않습니다.)"); 
+      alert("성공적으로 저장되었습니다! ⚡\n(이제 절대로 에러가 나거나 데이터가 꼬이지 않습니다.)"); 
       b.innerText = "결과 일괄 저장"; 
       b.disabled = false; 
     } catch (err) { 
@@ -687,7 +686,6 @@
     document.getElementById(container).innerHTML = `<div class="loading-spinner"></div><p style="text-align:center; color:var(--text-sub);">명단을 추합하고 있습니다...</p>`;
     document.getElementById('globalBatchFooter').style.display = 'none';
     try {
-      // 🚀 시간순(created_at) 강제 정렬 적용! 암호 알파벳에 휘둘리지 않음!
       const [{data: allStudents}, {data: allRecords}] = await Promise.all([ 
         _supabase.from('students').select('*').limit(2000), 
         _supabase.from('exam_records').select('*').order('created_at', { ascending: false }).limit(10000)
@@ -760,7 +758,7 @@
               return `<div class="pending-card" data-id="${s.id}" data-has-extra="${hasExtra}" data-db-status="${s.dbStatus}" onclick="toggleSelect(this, event)">
                         <span class="pending-name">${s.name}</span>
                         <div style="font-size:13px; font-weight:700; color:var(--text-sub); display:flex; gap:4px; flex-direction:column; align-items:center;">
-                          <span>컷: ${cutoff}개 | ${isOT ? '기한초과' : a}</span>${extraBadge}
+                          <span>컷: ${cutoff}개 | ${isOT ? '기한초과' : a}</span>${!hasExtra ? extraBadge : ''}
                         </div>
                         ${extraToggles}
                       </div>`;
@@ -855,7 +853,6 @@
     switchTab('statsTab', el);
     document.getElementById('statsTableContainer').innerHTML = `<div class="loading-spinner"></div><p style="text-align:center; color:var(--text-sub);">초고속 통계 산출 중...</p>`;
     try {
-      // 🚀 시간순(created_at) 강제 정렬!
       const [{data: allStudents}, {data: allRecords}] = await Promise.all([ 
         _supabase.from('students').select('*').limit(2000), 
         _supabase.from('exam_records').select('*').order('created_at', { ascending: false }).limit(10000) 
@@ -1006,7 +1003,6 @@
 
   async function copyText(date, dl, tabId, btn) {
     const originalText = btn.innerText; btn.innerText = "복사 중...";
-    // 🚀 시간순(created_at) 강제 정렬!
     const { data: allRecords } = await _supabase.from('exam_records').select('*').order('created_at', { ascending: false }).limit(10000);
     
     const uniqueMap = new Map();

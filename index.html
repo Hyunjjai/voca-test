@@ -3,15 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>단어 스마트 관리 v72 (Glassmorphism + 화면전환 복구)</title>
+  <title>단어 스마트 관리 v73</title>
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
   <style>
     *, *::before, *::after { box-sizing: border-box !important; }
     
-    /* 🚀 글래스 모피즘 디자인 변수 */
+    /* 🚀 시스템 테마 동기화 및 글래스 모피즘 변수 */
     :root {
+      color-scheme: light; /* 달력, 스크롤바 등 기본 UI 라이트 모드 연동 */
+      
       --bg-gradient: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
       --text-main: #1F2937; --text-sub: #4B5563;
       --primary: #4F46E5; --primary-hover: #4338CA;
@@ -22,7 +24,7 @@
       --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
       --glass-inset: inset 0 1px 1px rgba(255,255,255,0.8);
       
-      --input-bg: rgba(255, 255, 255, 0.5);
+      --input-bg: rgba(255, 255, 255, 0.4);
       
       --pass-bg: rgba(209, 250, 229, 0.5); --pass-border: rgba(167, 243, 208, 0.8); --pass-text: #065F46;
       --fail-bg: rgba(254, 226, 226, 0.55); --fail-border: rgba(254, 202, 202, 0.8); --fail-text: #991B1B;
@@ -32,6 +34,8 @@
     }
     
     [data-theme="dark"] {
+      color-scheme: dark; /* 🚀 달력, 드롭다운 팝업 시스템 다크 테마 강제 연동 */
+      
       --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
       --text-main: #F9FAFB; --text-sub: #D1D5DB;
       --primary: #6366F1; --primary-hover: #818CF8;
@@ -42,7 +46,7 @@
       --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
       --glass-inset: inset 0 1px 1px rgba(255,255,255,0.05);
       
-      --input-bg: rgba(17, 24, 39, 0.5);
+      --input-bg: rgba(17, 24, 39, 0.4);
       
       --pass-bg: rgba(6, 95, 70, 0.35); --pass-border: rgba(4, 120, 87, 0.5); --pass-text: #6EE7B7;
       --fail-bg: rgba(153, 27, 27, 0.35); --fail-border: rgba(185, 28, 28, 0.5); --fail-text: #FCA5A5;
@@ -78,7 +82,6 @@
     .sticky-controls { position: sticky; top: 85px; z-index: 100; padding: 16px; margin-bottom: 20px; }
     .sticky-controls.flex-row { display: flex; gap: 10px; align-items: center; }
     
-    /* 🚀 v72 복구 완료: 탭 메뉴 디자인 및 탭 내용 숨김/표시 코드 완벽 복구 */
     .tabs { 
       position: fixed; bottom: 0; left: 0; width: 100%;
       background: var(--glass-bg-solid); 
@@ -92,17 +95,33 @@
     .tab { flex: 1; text-align: center; padding: 12px 0; cursor: pointer; font-weight: 600; color: var(--text-sub); font-size: 14px; transition: 0.2s; -webkit-tap-highlight-color: transparent; } 
     .tab.active { color: var(--primary); font-weight: 800; }
     
-    /* 🚨 가장 중요했던 화면 전환 코드 (복구됨) */
     .tab-content { display: none; width: 100%; }
     .tab-content.active { display: block; animation: fadeIn 0.2s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     
+    /* 🚀 입력창 자체에 유리 질감(블러) 추가 및 통합 클래스화 */
+    .glass-input {
+      width: 100%; padding: 14px 16px; 
+      background: var(--input-bg); 
+      color: var(--text-main); 
+      border: 1px solid var(--glass-border); 
+      border-radius: 12px; font-size: 15px; 
+      appearance: none; -webkit-appearance: none; outline: none; 
+      transition: 0.3s; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    }
+    .glass-input:focus { border-color: var(--primary); background: var(--glass-bg-solid); }
+
+    /* 달력 아이콘 다크모드 반전 */
+    [data-theme="dark"] ::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.8; cursor: pointer; }
+    
+    /* 드롭다운 옵션(선택지) 창은 시스템 팝업이므로 테마에 맞는 솔리드 컬러 적용 */
+    option { background-color: var(--bg-container); color: var(--text-main); font-weight: 600; }
+
     .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
     .input-row label { font-size: 13px; font-weight: 700; color: var(--text-sub); margin-bottom: 6px; display: block; margin-left: 6px; }
-    .input-row input, .input-row select { width: 100%; padding: 14px 16px; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--glass-border); border-radius: 14px; font-size: 15px; appearance: none; -webkit-appearance: none; outline: none; transition: 0.3s; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
-    .input-row input:focus, .input-row select:focus { border-color: var(--primary); background: var(--glass-bg-solid); }
     
-    .compact-vacation-panel { display: flex; justify-content: space-between; align-items: center; background: var(--input-bg); padding: 0 16px; border-radius: 14px; border: 1px solid var(--glass-border); height: 49px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+    .compact-vacation-panel { display: flex; justify-content: space-between; align-items: center; background: var(--input-bg); padding: 0 14px; border-radius: 12px; border: 1px solid var(--glass-border); height: 48px; box-sizing: border-box; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);}
     .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
     .switch input { opacity: 0; width: 0; height: 0; }
     .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(107, 114, 128, 0.3); transition: .3s; border-radius: 30px; }
@@ -170,8 +189,9 @@
     [data-theme="dark"] .toggle-chip.done { background: var(--primary); color: white; }
 
     .batch-footer { margin: 20px auto 10px auto; width: 100%; max-width: 600px; background: var(--glass-bg-solid); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 18px; display: none; border-radius: 20px; border: 1px solid var(--glass-border); box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-    .btn-copy-small { display: block; width: 100%; padding: 16px; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--glass-border); border-radius: 16px; font-weight: 800; font-size: 16px; cursor: pointer; margin-top: 12px; text-align: center; box-shadow: inset 0 2px 4px rgba(255,255,255,0.5); }
+    .btn-copy-small { display: block; width: 100%; padding: 16px; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--glass-border); border-radius: 16px; font-weight: 800; font-size: 16px; cursor: pointer; margin-top: 12px; text-align: center; box-shadow: inset 0 2px 4px rgba(255,255,255,0.5); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);}
     [data-theme="dark"] .btn-copy-small { box-shadow: none; }
+    
     .loading-spinner { border: 4px solid rgba(0, 0, 0, 0.05); width: 40px; height: 40px; border-radius: 50%; border-left-color: var(--primary); animation: spin 1s linear infinite; margin: 30px auto; }
     [data-theme="dark"] .loading-spinner { border-color: rgba(255,255,255,0.05); border-left-color: var(--primary); }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -180,7 +200,7 @@
     .modal-content { background: var(--glass-bg-solid); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 30px; border-radius: 24px; width: 100%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.2), var(--glass-inset); border: 1px solid var(--glass-border); display:flex; flex-direction:column; gap:12px; overflow-y:auto; max-height:90vh;}
     .modal-content h3 { margin: 0 0 10px 0; font-size: 24px; font-weight: 800; text-align:center;}
     .modal-content label { font-size: 14px; font-weight: 700; color: var(--text-sub); margin-bottom:-6px;}
-    .modal-content input[type="text"] { padding: 14px; border: 1px solid var(--glass-border); border-radius: 12px; background: var(--input-bg); color: var(--text-main); font-size: 16px; width:100%; outline: none; transition: 0.3s;}
+    .modal-content input[type="text"] { padding: 14px; border: 1px solid var(--glass-border); border-radius: 12px; background: var(--input-bg); color: var(--text-main); font-size: 16px; width:100%; outline: none; transition: 0.3s; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);}
     .modal-content input[type="text"]:focus { border-color: var(--primary); background: var(--glass-bg-solid);}
     .modal-content .check-row { display:flex; align-items:center; gap:10px; margin-top:5px; cursor:pointer;}
     
@@ -243,11 +263,11 @@
   <div id="inputTab" class="tab-content active">
     <div class="sticky-controls glass-panel">
       <div class="input-row">
-        <div><label>시험 일자</label><input type="date" id="testDate" onchange="updateClassDropdown()"></div>
-        <div><label>시험 반</label><select id="groupSelect" onchange="loadStudents()"></select></div>
+        <div><label>시험 일자</label><input type="date" id="testDate" class="glass-input" onchange="updateClassDropdown()"></div>
+        <div><label>시험 반</label><select id="groupSelect" class="glass-input" onchange="loadStudents()"></select></div>
       </div>
       <div class="input-row">
-        <div><label>일괄 마감 기한</label><input type="date" id="deadlineDate"></div>
+        <div><label>일괄 마감 기한</label><input type="date" id="deadlineDate" class="glass-input"></div>
         <div>
           <label>운영 모드</label>
           <div class="compact-vacation-panel">
@@ -273,17 +293,17 @@
   
   <div id="statsTab" class="tab-content">
     <div class="sticky-controls glass-panel flex-row">
-      <select id="statsGroupSelect" onchange="filterStats()" style="flex:1; padding:14px; border-radius:14px; border:1px solid var(--glass-border); background:var(--input-bg); color:var(--text-main); font-size:15px; outline:none;">
+      <select id="statsGroupSelect" class="glass-input" onchange="filterStats()" style="flex:1;">
         <option value="">전체 반</option><option value="청운">청운</option><option value="백운A">백운A</option><option value="백운B">백운B</option><option value="백운C">백운C</option>
       </select>
-      <input type="text" id="statsSearch" placeholder="이름 검색..." onkeyup="filterStats()" style="flex:2; padding:14px; border-radius:14px; border:1px solid var(--glass-border); background:var(--input-bg); color:var(--text-main); font-size:15px; outline:none;">
+      <input type="text" id="statsSearch" class="glass-input" placeholder="이름 검색..." onkeyup="filterStats()" style="flex:2;">
     </div>
     <div id="statsTableContainer" style="overflow-x:auto;"></div>
   </div>
 
   <div id="manageTab" class="tab-content">
     <div class="sticky-controls glass-panel flex-row">
-      <input type="text" id="manageSearch" placeholder="이름 검색..." onkeyup="filterManageTable()" style="flex:1; padding:14px; border-radius:14px; border:1px solid var(--glass-border); background:var(--input-bg); color:var(--text-main); font-size:15px; outline:none;">
+      <input type="text" id="manageSearch" class="glass-input" placeholder="이름 검색..." onkeyup="filterManageTable()" style="flex:1;">
       <button onclick="openStudentModal()" style="background:var(--primary); color:white; border:none; padding:14px 18px; border-radius:14px; font-weight:800; font-size:15px; cursor:pointer; box-shadow: 0 4px 12px rgba(79,70,229,0.3);">+ 추가</button>
     </div>
     <div id="manageTableContainer" style="overflow-x:auto;"></div>
@@ -292,7 +312,7 @@
   <div class="batch-footer" id="globalBatchFooter">
     <div style="display:flex; flex-direction:column; gap:10px;">
       <div style="display:flex; gap:10px;">
-        <input type="date" id="batchNewDeadline" style="flex:1; padding:14px; border-radius:14px; border:1px solid var(--glass-border); background:var(--input-bg); color:var(--text-main); font-size:15px; outline:none;">
+        <input type="date" id="batchNewDeadline" class="glass-input" style="flex:1;">
         <button onclick="processBatchDeadline()" style="padding:14px 18px; background:var(--warning); color:white; border:none; border-radius:14px; font-weight:800; box-shadow: 0 4px 12px rgba(245,158,11,0.3);">전체 연장</button>
       </div>
       <button onclick="processBatchComplete(event)" style="width:100%; padding:16px; background:var(--primary); color:white; border:none; border-radius:14px; font-weight:800; font-size:16px; box-shadow: 0 4px 12px rgba(79,70,229,0.3);">✔️ 선택 항목 일괄 완료 / 적용</button>

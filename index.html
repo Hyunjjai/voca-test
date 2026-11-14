@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>단어 스마트 관리 v73</title>
+  <title>단어 스마트 관리 v74</title>
   <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   
@@ -12,14 +12,14 @@
     
     /* 🚀 시스템 테마 동기화 및 글래스 모피즘 변수 */
     :root {
-      color-scheme: light; /* 달력, 스크롤바 등 기본 UI 라이트 모드 연동 */
+      color-scheme: light;
       
       --bg-gradient: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
       --text-main: #1F2937; --text-sub: #4B5563;
       --primary: #4F46E5; --primary-hover: #4338CA;
       
       --glass-bg: rgba(255, 255, 255, 0.45);
-      --glass-bg-solid: rgba(255, 255, 255, 0.7);
+      --glass-bg-solid: rgba(255, 255, 255, 0.78);
       --glass-border: rgba(255, 255, 255, 0.6);
       --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
       --glass-inset: inset 0 1px 1px rgba(255,255,255,0.8);
@@ -34,14 +34,14 @@
     }
     
     [data-theme="dark"] {
-      color-scheme: dark; /* 🚀 달력, 드롭다운 팝업 시스템 다크 테마 강제 연동 */
+      color-scheme: dark;
       
       --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
       --text-main: #F9FAFB; --text-sub: #D1D5DB;
       --primary: #6366F1; --primary-hover: #818CF8;
       
       --glass-bg: rgba(31, 41, 55, 0.4);
-      --glass-bg-solid: rgba(31, 41, 55, 0.7);
+      --glass-bg-solid: rgba(31, 41, 55, 0.85);
       --glass-border: rgba(255, 255, 255, 0.08);
       --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
       --glass-inset: inset 0 1px 1px rgba(255,255,255,0.05);
@@ -92,14 +92,13 @@
       box-shadow: 0 -10px 30px rgba(0,0,0,0.05);
     }
     [data-theme="dark"] .tabs { background: rgba(31, 41, 55, 0.85); border-top: 1px solid rgba(255,255,255,0.05); }
-    .tab { flex: 1; text-align: center; padding: 12px 0; cursor: pointer; font-weight: 600; color: var(--text-sub); font-size: 14px; transition: 0.2s; -webkit-tap-highlight-color: transparent; } 
+    .tab { flex: 1; text-align: center; padding: 12px 0; cursor: pointer; font-weight: 600; color: var(--text-sub); font-size: 14px; transition: 0.2s; -webkit-tap-highlight-color: transparent; white-space: nowrap; } 
     .tab.active { color: var(--primary); font-weight: 800; }
     
     .tab-content { display: none; width: 100%; }
     .tab-content.active { display: block; animation: fadeIn 0.2s ease-out; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     
-    /* 🚀 입력창 자체에 유리 질감(블러) 추가 및 통합 클래스화 */
     .glass-input {
       width: 100%; padding: 14px 16px; 
       background: var(--input-bg); 
@@ -112,11 +111,9 @@
     }
     .glass-input:focus { border-color: var(--primary); background: var(--glass-bg-solid); }
 
-    /* 달력 아이콘 다크모드 반전 */
     [data-theme="dark"] ::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.8; cursor: pointer; }
-    
-    /* 드롭다운 옵션(선택지) 창은 시스템 팝업이므로 테마에 맞는 솔리드 컬러 적용 */
-    option { background-color: var(--bg-container); color: var(--text-main); font-weight: 600; }
+    option { background-color: #FFFFFF; color: #1F2937; font-weight: 600; }
+    [data-theme="dark"] option { background-color: #1F2937; color: #F9FAFB; }
 
     .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
     .input-row label { font-size: 13px; font-weight: 700; color: var(--text-sub); margin-bottom: 6px; display: block; margin-left: 6px; }
@@ -173,6 +170,9 @@
     .val-absent { color: var(--absent-text); font-weight: 900; }
     .val-overdue { color: var(--warning); font-weight: 900; }
     
+    .clickable-name { font-weight: 800; color: var(--primary); cursor: pointer; text-decoration: underline; text-underline-offset: 4px; transition: 0.2s; }
+    .clickable-name:hover { opacity: 0.75; }
+
     .accordion-header { background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--glass-border); padding: 18px 20px; font-size: 18px; font-weight: 800; cursor: pointer; border-radius: 16px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; user-select: none; box-shadow: var(--glass-shadow); text-shadow: 0 1px 2px rgba(0,0,0,0.05); }
     .accordion-content { display: none; width: 100%; }
     .accordion-content.active { display: block; animation: fadeIn 0.2s ease-out; }
@@ -196,13 +196,23 @@
     [data-theme="dark"] .loading-spinner { border-color: rgba(255,255,255,0.05); border-left-color: var(--primary); }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-    .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.3); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 2000; display: flex; justify-content: center; align-items: center; padding: 15px; }
-    .modal-content { background: var(--glass-bg-solid); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 30px; border-radius: 24px; width: 100%; max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.2), var(--glass-inset); border: 1px solid var(--glass-border); display:flex; flex-direction:column; gap:12px; overflow-y:auto; max-height:90vh;}
-    .modal-content h3 { margin: 0 0 10px 0; font-size: 24px; font-weight: 800; text-align:center;}
+    .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.35); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 2000; display: flex; justify-content: center; align-items: center; padding: 15px; }
+    .modal-content { background: var(--glass-bg-solid); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); padding: 28px 24px; border-radius: 24px; width: 100%; max-width: 440px; box-shadow: 0 20px 40px rgba(0,0,0,0.25), var(--glass-inset); border: 1px solid var(--glass-border); display:flex; flex-direction:column; gap:12px; overflow-y:auto; max-height:85vh;}
+    .modal-content h3 { margin: 0 0 6px 0; font-size: 22px; font-weight: 800; text-align:center;}
     .modal-content label { font-size: 14px; font-weight: 700; color: var(--text-sub); margin-bottom:-6px;}
     .modal-content input[type="text"] { padding: 14px; border: 1px solid var(--glass-border); border-radius: 12px; background: var(--input-bg); color: var(--text-main); font-size: 16px; width:100%; outline: none; transition: 0.3s; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);}
     .modal-content input[type="text"]:focus { border-color: var(--primary); background: var(--glass-bg-solid);}
     .modal-content .check-row { display:flex; align-items:center; gap:10px; margin-top:5px; cursor:pointer;}
+
+    /* 🚀 학생 이력 모달 전용 스타일 */
+    .history-list { display: flex; flex-direction: column; gap: 8px; max-height: 52vh; overflow-y: auto; padding-right: 4px; margin-top: 4px; }
+    .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: 14px; background: var(--input-bg); border: 1px solid var(--glass-border); font-size: 14px; }
+    .history-date { font-weight: 800; color: var(--text-main); font-size: 15px; }
+    .history-badge { padding: 4px 10px; border-radius: 8px; font-weight: 800; font-size: 12px; display: inline-block; }
+    .h-pass { background: var(--pass-bg); color: var(--pass-text); border: 1px solid var(--pass-border); }
+    .h-fail { background: var(--fail-bg); color: var(--fail-text); border: 1px solid var(--fail-border); }
+    .h-absent { background: var(--absent-bg); color: var(--absent-text); border: 1px solid var(--absent-border); }
+    .history-sub { font-size: 12px; font-weight: 700; color: var(--text-sub); margin-top: 2px; text-align: right; }
     
     @media (max-width: 768px) {
       body { padding: 0 0 85px 0; }
@@ -238,7 +248,7 @@
       .btn-group { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; padding: 4px; border-radius: 10px; }
       .btn-small { font-size: 11px; padding: 8px 0; border-radius: 8px; }
       
-      .tab { font-size: 13px; padding: 12px 0; }
+      .tab { font-size: 12px; padding: 12px 0; }
       .stats-table th, .stats-table td { padding: 12px 4px; font-size: 12px; }
       .accordion-header { font-size: 15px; padding: 16px 16px; border-radius: 16px; }
       
@@ -250,6 +260,7 @@
       .student-card .name, .pending-card .pending-name { font-size: 18px; }
       .card-meta-info { font-size: 10px; }
       .btn-small { font-size: 10px; padding: 6px 0; }
+      .tab { font-size: 11px; }
     }
   </style>
 </head>
@@ -289,6 +300,8 @@
   </div>
   
   <div id="dashTab" class="tab-content"><div id="pendingListContainer"></div></div>
+  <!-- 🚀 신설된 결석자 탭 영역 -->
+  <div id="absentTab" class="tab-content"><div id="absentListContainer"></div></div>
   <div id="overdueTab" class="tab-content"><div id="overdueListContainer"></div></div>
   
   <div id="statsTab" class="tab-content">
@@ -296,7 +309,7 @@
       <select id="statsGroupSelect" class="glass-input" onchange="filterStats()" style="flex:1;">
         <option value="">전체 반</option><option value="청운">청운</option><option value="백운A">백운A</option><option value="백운B">백운B</option><option value="백운C">백운C</option>
       </select>
-      <input type="text" id="statsSearch" class="glass-input" placeholder="이름 검색..." onkeyup="filterStats()" style="flex:2;">
+      <input type="text" id="statsSearch" class="glass-input" placeholder="이름 검색 (이름 클릭 시 상세 이력)..." onkeyup="filterStats()" style="flex:2;">
     </div>
     <div id="statsTableContainer" style="overflow-x:auto;"></div>
   </div>
@@ -320,14 +333,17 @@
   </div>
 </div>
 
+<!-- 🚀 하단 탭: 미통과 우측에 '결석자' 탭 추가 -->
 <div class="tabs">
   <div class="tab active" onclick="switchTab('inputTab', this)">입력</div>
   <div class="tab" onclick="refreshDashboard('dashTab', this)">미통과</div>
+  <div class="tab" onclick="refreshDashboard('absentTab', this)">결석자</div>
   <div class="tab" onclick="refreshDashboard('overdueTab', this)">기한초과</div>
   <div class="tab" onclick="loadGlobalStats(this)">통계</div>
   <div class="tab" onclick="loadManageStudents(this)">명부</div>
 </div>
 
+<!-- 학생 명부 추가/수정 모달 -->
 <div id="studentModal" class="modal-overlay" style="display:none;">
   <div class="modal-content">
     <h3 id="modalTitle">학생 정보</h3>
@@ -354,8 +370,18 @@
     
     <div style="display:flex; gap:10px; margin-top:20px;">
       <button onclick="saveManageStudent()" style="flex:2; padding:16px; background:var(--primary); color:white; border:none; border-radius:14px; font-weight:800; font-size:16px; cursor:pointer; box-shadow: 0 4px 12px rgba(79,70,229,0.3);">저장하기</button>
-      <button onclick="closeStudentModal()" style="flex:1; padding:16px; background:var(--border-color); color:var(--text-main); border:none; border-radius:14px; font-weight:800; font-size:16px; cursor:pointer;">취소</button>
+      <button onclick="closeStudentModal()" style="flex:1; padding:16px; background:rgba(156,163,175,0.3); color:var(--text-main); border:none; border-radius:14px; font-weight:800; font-size:16px; cursor:pointer;">취소</button>
     </div>
+  </div>
+</div>
+
+<!-- 🚀 신규: 학생별 날짜별 상세 응시 이력 모달 -->
+<div id="historyModal" class="modal-overlay" style="display:none;" onclick="closeHistoryModal(event)">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <h3 id="historyModalTitle">학생 응시 이력</h3>
+    <div id="historySummary" class="summary-stats" style="margin-top:0; margin-bottom:4px;"></div>
+    <div id="historyListContainer" class="history-list"></div>
+    <button onclick="closeHistoryModal()" style="width:100%; padding:15px; background:var(--primary); color:white; border:none; border-radius:14px; font-weight:800; font-size:16px; cursor:pointer; margin-top:8px; box-shadow: 0 4px 12px rgba(79,70,229,0.3);">닫기</button>
   </div>
 </div>
 
@@ -372,6 +398,15 @@
     "2026-05-05", "2026-05-24", "2026-05-25", "2026-06-06", "2026-08-15", "2026-09-24",
     "2026-09-25", "2026-09-26", "2026-10-03", "2026-10-09", "2026-12-25"
   ];
+
+  // 오늘 날짜를 YYYY-MM-DD 로컬 포맷 문자열로 안전하게 반환하는 헬퍼 함수
+  function getTodayStr() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
 
   function initTheme() {
     const savedT = localStorage.getItem('appTheme') || 'light'; 
@@ -399,7 +434,8 @@
   function updateClassDropdown() {
     const d = document.getElementById('testDate').value;
     if (!d) return;
-    const dateObj = new Date(d);
+    const [y, m, dayNum] = d.split('-').map(Number);
+    const dateObj = new Date(y, m - 1, dayNum);
     const day = dateObj.getDay();
     const isHoliday = HOLIDAYS.includes(d);
     const isVacation = document.getElementById('vacationToggle').checked;
@@ -417,9 +453,11 @@
     document.getElementById('saveBtn').style.display = 'none';
   }
 
-  document.getElementById('testDate').valueAsDate = new Date();
-  const tm = new Date(); tm.setDate(tm.getDate() + 1); document.getElementById('deadlineDate').valueAsDate = tm;
-  document.getElementById('batchNewDeadline').valueAsDate = tm;
+  document.getElementById('testDate').value = getTodayStr();
+  const tm = new Date(); tm.setDate(tm.getDate() + 1);
+  const tmStr = `${tm.getFullYear()}-${String(tm.getMonth()+1).padStart(2,'0')}-${String(tm.getDate()).padStart(2,'0')}`;
+  document.getElementById('deadlineDate').value = tmStr;
+  document.getElementById('batchNewDeadline').value = tmStr;
   initVacationMode();
   updateClassDropdown();
 
@@ -492,8 +530,9 @@
         _supabase.from('exam_records').select('*').order('created_at', { ascending: false }).limit(10000)
       ]);
 
-      const today = new Date(); today.setHours(0,0,0,0);
-      const targetDateObj = new Date(targetDateStr);
+      const todayStr = getTodayStr();
+      const [ty, tm, td] = targetDateStr.split('-').map(Number);
+      const targetDateObj = new Date(ty, tm - 1, td);
       const dayOfWeek = targetDateObj.getDay();
       let filterDay = (dayOfWeek === 2) ? "화" : (dayOfWeek === 3) ? "수" : "";
       
@@ -512,21 +551,20 @@
       uniqueRecords.forEach(r => {
         const name = r.student_name;
         const result = r.is_passed;
-        const deadline = new Date(r.deadline);
-        const rDateObj = new Date(r.test_date); rDateObj.setHours(0,0,0,0);
         
         if (!statsMap[name]) statsMap[name] = { pass: 0, fail: 0, overdue: 0, absent: 0 };
         if (result === 'Pass') statsMap[name].pass++;
         else if (result === 'Absence') statsMap[name].absent++; 
         else if (result === 'Fail') {
           statsMap[name].fail++;
-          if (deadline < today && ['대기중', '부분완료_본과제', '부분완료_추가과제'].includes(r.status)) statsMap[name].overdue++;
+          if (r.deadline < todayStr && ['대기중', '부분완료_본과제', '부분완료_추가과제'].includes(r.status)) statsMap[name].overdue++;
         }
 
-        if (rDateObj < targetDateObj) {
-          const rDateNum = rDateObj.getTime();
-          if (!lastRecordMap[name] || lastRecordMap[name].date < rDateNum) {
-            lastRecordMap[name] = { date: rDateNum, status: result };
+        // 🚀 v74 핵심 버그 수정: 시차 오류가 없도록 YYYY-MM-DD 문자열 직접 비교!
+        // 당일(targetDateStr) 저장한 기록은 절대 '이전 시험(lastRecordMap)'에 포함되지 않음
+        if (r.test_date < targetDateStr) {
+          if (!lastRecordMap[name] || lastRecordMap[name].date < r.test_date) {
+            lastRecordMap[name] = { date: r.test_date, status: result };
           }
         }
       });
@@ -688,7 +726,8 @@
       if (status === 'Fail') {
          dbStatus = (currentDbStatus === '완료' || currentDbStatus.startsWith('부분완료')) ? currentDbStatus : '대기중';
       } else if (status === 'Absence') {
-         dbStatus = '결석처리';
+         // 결석자도 이미 보강 완료('완료')된 상태라면 보호막 유지
+         dbStatus = (currentDbStatus === '완료') ? '완료' : '결석처리';
       } else {
          dbStatus = '해당없음';
       }
@@ -721,7 +760,7 @@
         .insert(finalInsertData);
       if (insErr) throw insErr;
       
-      alert("성공적으로 저장되었습니다! ⚡\n(이제 절대로 에러가 나거나 데이터가 꼬이지 않습니다.)"); 
+      alert("성공적으로 저장되었습니다! ⚡"); 
       b.innerText = "결과 일괄 저장"; 
       b.disabled = false; 
     } catch (err) { 
@@ -744,7 +783,12 @@
 
   async function refreshDashboard(tabId, el) {
     switchTab(tabId, el);
-    const container = tabId === 'dashTab' ? 'pendingListContainer' : 'overdueListContainer';
+    const containerMap = {
+      'dashTab': 'pendingListContainer',
+      'absentTab': 'absentListContainer',
+      'overdueTab': 'overdueListContainer'
+    };
+    const container = containerMap[tabId];
     document.getElementById(container).innerHTML = `<div class="loading-spinner"></div><p style="text-align:center; color:var(--text-sub);">명단을 추합하고 있습니다...</p>`;
     document.getElementById('globalBatchFooter').style.display = 'none';
     try {
@@ -762,10 +806,18 @@
           uniqueRecordsMap.set(key, r);
         }
       });
-      const pendingRecords = Array.from(uniqueRecordsMap.values()).filter(r => ['대기중', '부분완료_본과제', '부분완료_추가과제'].includes(r.status));
+      const allUnique = Array.from(uniqueRecordsMap.values());
+
+      // 🚀 결석자 탭과 미통과/기한초과 탭 데이터 필터링 분리
+      let targetRecords = [];
+      if (tabId === 'absentTab') {
+        targetRecords = allUnique.filter(r => r.is_passed === 'Absence' && r.status !== '완료');
+      } else {
+        targetRecords = allUnique.filter(r => r.is_passed === 'Fail' && ['대기중', '부분완료_본과제', '부분완료_추가과제'].includes(r.status));
+      }
       
       const processedData = {};
-      (pendingRecords || []).forEach(r => {
+      targetRecords.forEach(r => {
         const dStr = r.test_date;
         if (!processedData[dStr]) processedData[dStr] = [];
         const meta = studentMeta[r.student_name] || { isAdj: false, mockGrade: '-' };
@@ -776,13 +828,64 @@
   }
 
   function renderDashboards(data, tabId) {
+    const containerMap = {
+      'dashTab': 'pendingListContainer',
+      'absentTab': 'absentListContainer',
+      'overdueTab': 'overdueListContainer'
+    };
+    const con = document.getElementById(containerMap[tabId]);
+    con.innerHTML = ""; 
+    const todayStr = getTodayStr();
+    const dates = Object.keys(data).sort().reverse(); 
+    let total = 0;
+
+    // 🚀 1. 결석자 탭 전용 렌더링
+    if (tabId === 'absentTab') {
+      dates.forEach(d => {
+        const items = data[d];
+        if (!items || items.length === 0) return;
+        total += items.length;
+
+        const grouped = {};
+        items.forEach(it => {
+          if (!grouped[it.group]) grouped[it.group] = [];
+          grouped[it.group].push(it);
+        });
+
+        let html = `<div class="accordion-header glass-panel" onclick="toggleAccordion(this)"><span>📅 ${d} 결석자 (${items.length}명)</span><span class="toggle-icon">▼</span></div><div class="accordion-content active">`;
+        const sortedGroups = Object.keys(grouped).sort();
+        for (const g of sortedGroups) {
+          html += `<div style="font-size:15px; font-weight:700; color:var(--text-sub); margin-bottom:8px;">${g}</div><div class="pending-grid">`;
+          html += grouped[g].sort((s1, s2) => s1.name.localeCompare(s2.name)).map(s => {
+            const cutoff = calculateCutoff(s.mockGrade, s.isAdjusted);
+            const isOverdue = s.deadline < todayStr;
+            const dlBadge = isOverdue 
+              ? `<span class="overdue-badge" style="background:var(--danger); color:white; margin-top:4px;">기한초과 (${s.deadline.slice(5)})</span>`
+              : `<span class="overdue-badge" style="background:rgba(79,70,229,0.15); color:var(--primary); margin-top:4px;">기한: ${s.deadline.slice(5)}</span>`;
+            return `<div class="pending-card" data-id="${s.id}" data-has-extra="false" data-db-status="${s.dbStatus}" onclick="toggleSelect(this, event)">
+                      <span class="pending-name">${s.name}</span>
+                      <div style="font-size:13px; font-weight:700; color:var(--text-sub); display:flex; gap:4px; flex-direction:column; align-items:center;">
+                        <span>컷: ${cutoff}개 | 결석</span>${dlBadge}
+                      </div>
+                    </div>`;
+          }).join('');
+          html += `</div>`;
+        }
+        html += `<div><button class="btn-copy-small" onclick="copyAbsentText('${d}', '${items[0].deadline}', this)">📋 결석자 마감 기한 공지 복사</button></div></div>`;
+        con.innerHTML += html;
+      });
+
+      if (total === 0) {
+        con.innerHTML = `<p style="text-align:center; color:var(--text-sub); padding:50px 0; font-weight:700;">현재 미응시 결석자가 없습니다.</p>`;
+      }
+      document.getElementById('globalBatchFooter').style.display = total > 0 ? 'block' : 'none';
+      return;
+    }
+
+    // 🚀 2. 미통과 / 기한초과 탭 렌더링
     const isOT = tabId === 'overdueTab';
-    const con = document.getElementById(isOT ? 'overdueListContainer' : 'pendingListContainer');
-    con.innerHTML = ""; const today = new Date(); today.setHours(0,0,0,0);
-    const dates = Object.keys(data).sort().reverse(); let total = 0;
-    
     dates.forEach(d => {
-      const items = data[d].filter(it => { const dDate = new Date(it.deadline); dDate.setHours(0,0,0,0); return isOT ? dDate < today : dDate >= today; });
+      const items = data[d].filter(it => isOT ? it.deadline < todayStr : it.deadline >= todayStr);
       if (items.length === 0) return;
       total += items.length;
       
@@ -832,6 +935,9 @@
       html += `<div><button class="btn-copy-small" onclick="copyText('${d}', '${items[0].deadline}', '${tabId}', this)">📋 공지 복사</button></div></div>`;
       con.innerHTML += html;
     });
+    if (total === 0) {
+      con.innerHTML = `<p style="text-align:center; color:var(--text-sub); padding:50px 0; font-weight:700;">해당 명단이 없습니다.</p>`;
+    }
     document.getElementById('globalBatchFooter').style.display = total > 0 ? 'block' : 'none';
   }
   
@@ -887,7 +993,7 @@
         }
     });
 
-    if (updates.length === 0) return alert("변경된 항목이 없습니다. (일반 학생은 카드를, 추가 학생은 버튼을 눌러주세요)");
+    if (updates.length === 0) return alert("변경된 항목이 없습니다. (일반/결석 학생은 카드를, 추가 학생은 버튼을 눌러주세요)");
 
     const btn = event.currentTarget || document.querySelector('.batch-footer button:last-child');
     const origText = btn.innerText;
@@ -911,6 +1017,8 @@
   }
 
   let allStats = [];
+  let globalHistoryMap = {}; // 🚀 학생별 상세 응시 이력 저장용 맵
+
   async function loadGlobalStats(el) {
     switchTab('statsTab', el);
     document.getElementById('statsTableContainer').innerHTML = `<div class="loading-spinner"></div><p style="text-align:center; color:var(--text-sub);">초고속 통계 산출 중...</p>`;
@@ -930,15 +1038,21 @@
       const uniqueRecords = Array.from(uniqueRecordsMap.values());
       
       const statsMap = {};
-      const today = new Date(); today.setHours(0,0,0,0);
+      globalHistoryMap = {};
+      const todayStr = getTodayStr();
+
       uniqueRecords.forEach(r => {
         const name = r.student_name;
         if (!statsMap[name]) statsMap[name] = { pass: 0, fail: 0, overdue: 0, absent: 0 };
+        if (!globalHistoryMap[name]) globalHistoryMap[name] = [];
+        
+        globalHistoryMap[name].push(r);
+
         if (r.is_passed === 'Pass') statsMap[name].pass++;
         else if (r.is_passed === 'Absence') statsMap[name].absent++;
         else if (r.is_passed === 'Fail') {
           statsMap[name].fail++;
-          if (new Date(r.deadline) < today && ['대기중', '부분완료_본과제', '부분완료_추가과제'].includes(r.status)) statsMap[name].overdue++;
+          if (r.deadline < todayStr && ['대기중', '부분완료_본과제', '부분완료_추가과제'].includes(r.status)) statsMap[name].overdue++;
         }
       });
       allStats = (allStudents || []).map(s => {
@@ -950,8 +1064,17 @@
   }
   
   function renderStatsTable(data) {
-    let html = `<table class="stats-table"><thead><tr><th>반</th><th>이름</th><th>통과</th><th>미통과</th><th>결석</th><th>미준수</th></tr></thead><tbody>`;
-    data.forEach(s => { html += `<tr><td>${s.group}</td><td style="font-weight:800;">${s.name}</td><td class="val-pass">${s.pass}</td><td class="val-fail">${s.fail}</td><td>${s.absent}</td><td class="val-overdue">${s.overdue}</td></tr>`; });
+    let html = `<table class="stats-table"><thead><tr><th>반</th><th>이름 (클릭 시 이력)</th><th>통과</th><th>미통과</th><th>결석</th><th>미준수</th></tr></thead><tbody>`;
+    data.forEach(s => { 
+      html += `<tr>
+        <td>${s.group}</td>
+        <td><span class="clickable-name" onclick="openHistoryModal('${s.name}', '${s.group}')">${s.name}</span></td>
+        <td class="val-pass">${s.pass}</td>
+        <td class="val-fail">${s.fail}</td>
+        <td class="val-absent">${s.absent}</td>
+        <td class="val-overdue">${s.overdue}</td>
+      </tr>`; 
+    });
     document.getElementById('statsTableContainer').innerHTML = html + `</tbody></table>`;
   }
   
@@ -960,6 +1083,73 @@
     const groupVal = document.getElementById('statsGroupSelect').value;
     const filtered = allStats.filter(s => (s.name.toLowerCase().includes(searchVal)) && (groupVal === "" || s.group === groupVal));
     renderStatsTable(filtered);
+  }
+
+  // 🚀 학생 이름 클릭 시 날짜별 재시/통과/빡지/결석 이력을 보여주는 모달 함수
+  function openHistoryModal(name, group) {
+    document.getElementById('historyModalTitle').innerText = `${name} (${group}) 응시 이력`;
+    const records = (globalHistoryMap[name] || []).slice().sort((a, b) => b.test_date.localeCompare(a.test_date));
+    const st = allStats.find(x => x.name === name) || { pass: 0, fail: 0, absent: 0, overdue: 0 };
+
+    document.getElementById('historySummary').innerHTML = `
+      <div class="summary-item"><span class="summary-label">통과</span><span class="summary-value" style="color:var(--pass-text);">${st.pass}</span></div>
+      <div class="summary-item"><span class="summary-label">미통과</span><span class="summary-value" style="color:var(--fail-text);">${st.fail}</span></div>
+      <div class="summary-item"><span class="summary-label">결석</span><span class="summary-value" style="color:var(--absent-text);">${st.absent}</span></div>
+      <div class="summary-item"><span class="summary-label">미준수</span><span class="summary-value" style="color:var(--warning);">${st.overdue}</span></div>
+    `;
+
+    const listCon = document.getElementById('historyListContainer');
+    if (records.length === 0) {
+      listCon.innerHTML = `<p style="text-align:center; color:var(--text-sub); padding:30px 0; font-weight:700;">기록된 응시 이력이 없습니다.</p>`;
+    } else {
+      const todayStr = getTodayStr();
+      listCon.innerHTML = records.map(r => {
+        let badgeClass = 'h-pass';
+        let badgeText = '통과 (Pass)';
+        let subText = '';
+
+        if (r.is_passed === 'Fail') {
+          badgeClass = 'h-fail';
+          badgeText = r.action || '재시';
+          if (r.status === '완료') {
+            subText = '✔️ 이행 완료';
+          } else if (r.status === '부분완료_본과제') {
+            subText = `⏳ 추가빡지 남음 (기한: ${r.deadline})`;
+          } else if (r.status === '부분완료_추가과제') {
+            subText = `⏳ 본과제 남음 (기한: ${r.deadline})`;
+          } else {
+            subText = (r.deadline < todayStr) ? `🚨 기한초과 (기한: ${r.deadline})` : `⏳ 대기중 (기한: ${r.deadline})`;
+          }
+        } else if (r.is_passed === 'Absence') {
+          badgeClass = 'h-absent';
+          badgeText = '결석';
+          if (r.status === '완료') {
+            subText = '✔️ 재응시 완료';
+          } else {
+            subText = (r.deadline < todayStr) ? `🚨 미응시 기한초과 (기한: ${r.deadline})` : `⏳ 재응시 대기 (기한: ${r.deadline})`;
+          }
+        }
+
+        return `
+          <div class="history-item">
+            <div>
+              <div class="history-date">📅 ${r.test_date}</div>
+              <div style="font-size:12px; color:var(--text-sub); font-weight:600;">소속: ${r.main_group}</div>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:flex-end;">
+              <span class="history-badge ${badgeClass}">${badgeText}</span>
+              ${subText ? `<div class="history-sub">${subText}</div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    document.getElementById('historyModal').style.display = 'flex';
+  }
+
+  function closeHistoryModal(e) {
+    document.getElementById('historyModal').style.display = 'none';
   }
 
   let allManageStudents = [];
@@ -1063,6 +1253,33 @@
     else { alert("삭제되었습니다."); loadManageStudents(document.querySelector('.tab.active')); }
   }
 
+  // 🚀 결석자 탭 전용 마감 기한 안내 공지 복사
+  async function copyAbsentText(date, dl, btn) {
+    const originalText = btn.innerText; btn.innerText = "복사 중...";
+    const { data: allRecords } = await _supabase.from('exam_records').select('*').order('created_at', { ascending: false }).limit(10000);
+    
+    const uniqueMap = new Map();
+    (allRecords || []).forEach(r => { 
+      const key = r.test_date + '_' + r.student_name;
+      if (!uniqueMap.has(key)) uniqueMap.set(key, r);
+    });
+    const absentData = Array.from(uniqueMap.values()).filter(r => r.test_date === date && r.is_passed === 'Absence' && r.status !== '완료');
+
+    const aMap = {};
+    absentData.forEach(r => {
+      if (!aMap[r.main_group]) aMap[r.main_group] = [];
+      aMap[r.main_group].push(r.student_name);
+    });
+
+    let txt = `[${date} 결석자 재응시 안내]\n\n`;
+    Object.keys(aMap).sort().forEach(g => {
+      txt += `${g}: ${aMap[g].sort().join(', ')}\n`;
+    });
+    txt += `\n응시 마감 기한 : ${dl}까지\n기한 내에 반드시 시험에 응시해 주시기 바랍니다.`;
+
+    navigator.clipboard.writeText(txt).then(() => { alert("결석자 공지 명단이 복사되었습니다!"); btn.innerText = originalText; });
+  }
+
   async function copyText(date, dl, tabId, btn) {
     const originalText = btn.innerText; btn.innerText = "복사 중...";
     const { data: allRecords } = await _supabase.from('exam_records').select('*').order('created_at', { ascending: false }).limit(10000);
@@ -1074,16 +1291,15 @@
         uniqueMap.set(key, r);
       }
     });
-    const pendingData = Array.from(uniqueMap.values()).filter(r => ['대기중', '부분완료_본과제', '부분완료_추가과제'].includes(r.status));
+    const pendingData = Array.from(uniqueMap.values()).filter(r => r.is_passed === 'Fail' && ['대기중', '부분완료_본과제', '부분완료_추가과제'].includes(r.status));
 
-    const today = new Date(); today.setHours(0,0,0,0);
+    const todayStr = getTodayStr();
     const oMap = {}; const rMap = {}; const pMap = {}; const ppMap = {};
     
     pendingData.forEach(r => {
-      const dDate = new Date(r.deadline); dDate.setHours(0,0,0,0);
       const it = { group: r.main_group, name: r.student_name, action: r.action, status: r.status };
       
-      if (dDate < today) { 
+      if (r.deadline < todayStr) { 
         if(!oMap[r.test_date]) oMap[r.test_date] = []; oMap[r.test_date].push(it); 
       } else if (r.test_date === date && tabId === 'dashTab') {
         const baseAction = it.action.split('+')[0];
